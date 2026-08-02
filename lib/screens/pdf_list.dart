@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
-
+import 'package:flutter/material.dart';
+import 'pdf_details.dart';onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const PdfDetailsPage(),
+    ),
+  );
+},
 class PdfListPage extends StatelessWidget {
   const PdfListPage({super.key});
 
