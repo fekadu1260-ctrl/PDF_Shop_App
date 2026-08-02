@@ -60,4 +60,5 @@ class LoginPage extends StatelessWidget {
       ),
     );
   }
+import 'register.dart'
 
