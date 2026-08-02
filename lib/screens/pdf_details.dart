@@ -1,3 +1,4 @@
+import 'purchase.dart';import 'package:flutter/material.dart';
 import 'package:flutter/material.dart';
 
 class PdfDetailsPage extends StatelessWidget {
@@ -63,3 +64,13 @@ class PdfDetailsPage extends StatelessWidget {
     );
   }
 }
+onPressed: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const PurchasePage(),
+    ),
+  );
+},
+
+
