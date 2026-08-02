@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'pdf_list.dart';import 'package:flutter/material.dart';
 class CategoriesPage extends StatelessWidget {
   const CategoriesPage({super.key});
 
@@ -26,7 +26,7 @@ class CategoriesPage extends StatelessWidget {
               leading: const Icon(Icons.folder),
               title: Text(categories[index]),
               trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {},
+              onTap
             ),
           );
         },
@@ -34,3 +34,11 @@ class CategoriesPage extends StatelessWidget {
     );
   }
 }
+onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const PdfListPage(),
+    ),
+  );
+},
