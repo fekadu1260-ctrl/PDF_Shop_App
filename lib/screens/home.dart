@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-
+import 'categories.dart';
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -12,7 +12,14 @@ class HomePage extends StatelessWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
-        children: [
+onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const CategoriesPage(),
+    ),
+  );
+},        children: [
           const Text(
             "Welcome!",
             style: TextStyle(
@@ -57,3 +64,13 @@ class HomePage extends StatelessWidget {
     );
   }
 }
+
+onTap: () {
+  Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (context) => const CategoriesPage(),
+    ),
+  );
+},
+
