@@ -1,44 +1,87 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
-import 'pdf_details.dart';onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const PdfDetailsPage(),
-    ),
-  );
-},
-class PdfListPage extends StatelessWidget {
+import '../services/pdf_service.dart';
+import 'pdf_details.dart';
+
+class PdfListPage extends StatefulWidget {
   const PdfListPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final pdfs = [
-      "AutoCAD Basics.pdf",
-      "Structural Design Notes.pdf",
-      "Construction Management.pdf",
-      "Civil Engineering Exam Guide.pdf",
-    ];
+  State<PdfListPage> createState() => _PdfListPageState();
+}
 
+class _PdfListPageState extends State<PdfListPage> {
+
+  final PdfService pdfService = PdfService();
+  late Future<List<dynamic>> pdfs;
+
+  @override
+  void initState() {
+    super.initState();
+    pdfs = pdfService.fetchPdfs();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text("PDF Library"),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.all(16),
-        itemCount: pdfs.length,
-        itemBuilder: (context, index) {
-          return Card(
-            child: ListTile(
-              leading: const Icon(Icons.picture_as_pdf),
-              title: Text(pdfs[index]),
-              subtitle: const Text("Available for purchase"),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {},
-            ),
+
+      body: FutureBuilder<List<dynamic>>(
+        future: pdfs,
+
+        builder: (context, snapshot) {
+
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text("Error: ${snapshot.error}"),
+            );
+          }
+
+          final data = snapshot.data ?? [];
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: data.length,
+
+            itemBuilder: (context, index) {
+
+              final pdf = data[index];
+
+              return Card(
+                child: ListTile(
+                  leading: const Icon(Icons.picture_as_pdf),
+
+                  title: Text(pdf["title"]),
+
+                  subtitle: Text(
+                    "${pdf["category"]} - ${pdf["price"]} Birr",
+                  ),
+
+                  trailing:
+                    const Icon(Icons.arrow_forward_ios),
+
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                        const PdfDetailsPage(),
+                      ),
+                    );
+                  },
+                ),
+              );
+            },
           );
         },
       ),
     );
   }
-
+}
