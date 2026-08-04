@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/pdf_service.dart';
+import '../models/pdf_model.dart';
 import 'pdf_details.dart';
 
 class PdfListPage extends StatefulWidget {
@@ -12,7 +13,8 @@ class PdfListPage extends StatefulWidget {
 class _PdfListPageState extends State<PdfListPage> {
 
   final PdfService pdfService = PdfService();
-  late Future<List<dynamic>> pdfs;
+
+  late Future<List<PdfModel>> pdfs;
 
   @override
   void initState() {
@@ -27,7 +29,7 @@ class _PdfListPageState extends State<PdfListPage> {
         title: const Text("PDF Library"),
       ),
 
-      body: FutureBuilder<List<dynamic>>(
+      body: FutureBuilder<List<PdfModel>>(
         future: pdfs,
 
         builder: (context, snapshot) {
@@ -47,7 +49,6 @@ class _PdfListPageState extends State<PdfListPage> {
           final data = snapshot.data ?? [];
 
           return ListView.builder(
-            padding: const EdgeInsets.all(16),
             itemCount: data.length,
 
             itemBuilder: (context, index) {
@@ -58,21 +59,17 @@ class _PdfListPageState extends State<PdfListPage> {
                 child: ListTile(
                   leading: const Icon(Icons.picture_as_pdf),
 
-                  title: Text(pdf["title"]),
+                  title: Text(pdf.title),
 
                   subtitle: Text(
-                    "${pdf["category"]} - ${pdf["price"]} Birr",
+                    "${pdf.category} - ${pdf.price} Birr",
                   ),
-
-                  trailing:
-                    const Icon(Icons.arrow_forward_ios),
 
                   onTap: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) =>
-                        const PdfDetailsPage(),
+                        builder: (_) => const PdfDetailsPage(),
                       ),
                     );
                   },
