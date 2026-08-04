@@ -1,10 +1,20 @@
-import 'package:flutter/material.dart';
+import 'category_screen.dart';import 'package:flutter/material.dart';
 import '../models/pdf_model.dart';
 import '../services/pdf_service.dart';
 import '../services/auth_service.dart';
 import 'profile_screen.dart';
 import 'my_orders_screen.dart';
-import 'pdf_details_screen.dart';
+import 'pdf_details_screen.darIconButton(
+  icon: const Icon(Icons.category),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const CategoryScreen(),
+      ),
+    );
+  },
+),t';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
