@@ -1,4 +1,4 @@
-Future<List<dynamic>> fetchOrders() async {
+import 'api_config.dart';"${ApiConfig.baseUrl}/orders"import 'api_config.dart';Future<List<dynamic>> fetchOrders() async {
 
   final response = await http.get(
     Uri.parse("http://localhost:3000/orders"),

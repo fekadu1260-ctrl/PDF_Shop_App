@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'api_config.dart';"${ApiConfig.baseUrl}/categories"${ApiConfig.baseUrl}/categoriesimport 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/category_model.dart';
 
