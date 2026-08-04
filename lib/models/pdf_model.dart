@@ -1,4 +1,4 @@
-class PdfModel {
+price: double.tryParse(json['price'].toString()) ?? 0,class PdfModel {
   final String id;
   final String title;
   final String description;
