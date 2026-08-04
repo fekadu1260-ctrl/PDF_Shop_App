@@ -27,7 +27,16 @@ class PdfDetailsScreen extends StatelessWidget {
           children: [
 
             Text(
-              pdf.title,
+const SizedBox(height: 30),
+
+ElevatedButton(
+  child: const Text("Buy Now 💳"),
+  onPressed: () {
+
+    // Order creation will be connected next
+
+  },
+),              pdf.title,
               style: const TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
