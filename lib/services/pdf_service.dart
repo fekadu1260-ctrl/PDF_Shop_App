@@ -1,18 +1,42 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import '../models/pdf_model.dart';
+import 'api_config.dart';
+
 
 class PdfService {
 
-  Future<List<dynamic>> fetchPdfs() async {
+  Future<List<PdfModel>> fetchPdfs() async {
 
     final response = await http.get(
-      Uri.parse("http://localhost:3000/pdfs"),
+
+      Uri.parse(
+        "${ApiConfig.baseUrl}/pdfs",
+      ),
+
     );
 
+
     if (response.statusCode == 200) {
-      return jsonDecode(response.body);
+
+      List data = jsonDecode(response.body);
+
+
+      return data
+          .map(
+            (pdf) => PdfModel.fromJson(pdf),
+          )
+          .toList();
+
+
     } else {
-      throw Exception("Failed to load PDFs");
+
+      throw Exception(
+        "Failed to load PDFs",
+      );
+
     }
+
   }
+
 }
