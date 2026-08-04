@@ -4,7 +4,20 @@ Future<List<dynamic>> fetchOrders() async {
     Uri.parse("http://localhost:3000/orders"),
   );
 
-  if (response.statusCode == 200) {
+Future<bool> hasPurchased(String userId, String pdfId) async {
+
+  final orders = await fetchOrders();
+
+  for (final order in orders) {
+    if (order["userId"] == userId &&
+        order["pdfId"] == pdfId &&
+        order["status"] == "paid") {
+      return true;
+    }
+  }
+
+  return false;
+}  if (response.statusCode == 200) {
     return jsonDecode(response.body);
   } else {
     throw Exception("Failed to load orders");
