@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:syncfusion_flutter_pdfviewer/pdfviewer.dart';import 'package:flutter/material.dart';
 import '../services/payment_service.dart';
 
 
@@ -83,7 +83,9 @@ class _PdfViewerScreenState extends State<PdfViewerScreen> {
 
             );
 
-          }
+          }return SfPdfViewer.network(
+  widget.pdfUrl,
+);
 
 
           return const Center(
