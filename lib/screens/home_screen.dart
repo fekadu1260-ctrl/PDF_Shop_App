@@ -4,7 +4,7 @@ import 'my_orders_screen.dart';ElevatedButton(
       context,
       MaterialPageRoute(
         builder: (context) => const MyOrdersScreen(),
-      ),
+import '../services/auth_service.dart';      ),
     );
   },
   child: const Text("My Purchases"),
@@ -24,7 +24,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final PdfService pdfService = PdfService();
 
   late Future<List<PdfModel>> pdfs;
-
+final AuthService authService = AuthService();
 
   @override
   void initState() {
@@ -33,7 +33,14 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
 
-  @override
+  @overrideIconButton(
+  icon: const Icon(Icons.logout),
+  onPressed: () async {
+    await authService.signOut();
+
+    Navigator.popUntil(context, (route) => route.isFirst);
+  },
+),
   Widget build(BuildContext context) {
 
     return Scaffold(
