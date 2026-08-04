@@ -1,4 +1,4 @@
-import 'api_config.dart';"${ApiConfig.baseUrl}/pdfs"import 'dart:convert';
+import 'api_config.dart';Uri.parse("${ApiConfig.baseUrl}/pdfs")import 'api_config.dart';"${ApiConfig.baseUrl}/pdfs"import 'api_config.dart';"${ApiConfig.baseUrl}/pdfs"import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 class AdminPdfService {
