@@ -130,20 +130,38 @@ app.post("/payments", async (req, res) => {
 });
 
 
-app.listen(3000, () => {
-  console.log("PDF Shop API running on port 3000");
-});
-app.get("/payments", async (req, res) => {
+app.patch("/payments/:id/approve", async (req, res) => {
   try {
 
-    const snapshot = await db.collection("payments").get();
+    const paymentId = req.params.id;
 
-    const payments = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
+    const paymentRef = db.collection("payments").doc(paymentId);
 
-    res.json(payments);
+    const paymentDoc = await paymentRef.get();
+
+    if (!paymentDoc.exists) {
+      return res.status(404).json({
+        error: "Payment not found"
+      });
+    }
+
+    const payment = paymentDoc.data();
+
+    await paymentRef.update({
+      status: "paid"
+    });
+
+    if (payment.orderId) {
+      await db.collection("orders")
+        .doc(payment.orderId)
+        .update({
+          status: "paid"
+        });
+    }
+
+    res.json({
+      message: "Payment approved"
+    });
 
   } catch (err) {
 
@@ -153,4 +171,3 @@ app.get("/payments", async (req, res) => {
 
   }
 });
-
