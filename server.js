@@ -127,3 +127,34 @@ app.post("/payments", async (req, res) => {
   }
 
 });
+app.put("/payments/:id/approve", async (req, res) => {
+
+  try {
+
+    const payment = await Payment.findByIdAndUpdate(
+
+      req.params.id,
+
+      {
+        status: "paid"
+      },
+
+      {
+        new: true
+      }
+
+    );
+
+
+    res.json(payment);
+
+
+  } catch(error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+});
