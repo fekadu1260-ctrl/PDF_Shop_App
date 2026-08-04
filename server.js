@@ -1,7 +1,23 @@
-app.post("/orders", async (req, res) => {
+app.post("/orders", async (req, res) => app.post("/orders", async (req, res) => {
+
+  try {
+
+    const order = await Order.create(req.body);
+
+    res.status(201).json(order);
+
+  } catch (error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+});{
 
   const order = req.body;
-
+const Order = require("./models/Order");
   console.log("New order:", order);
 
   res.status(201).json({
