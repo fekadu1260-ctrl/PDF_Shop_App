@@ -1,4 +1,4 @@
-import 'dart:convert';
+import 'api_config.dart';"${ApiConfig.baseUrl}/users/$email"import 'dart:convert';
 import 'package:http/http.dart' as http;
 import '../models/user_model.dart';
 

@@ -1,11 +1,11 @@
-import 'dart:convert';
+import 'api_config.dart';"http://localhost:3000/payments/$paymentId""${ApiConfig.baseUrl}/payments"import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 
 class PaymentService {
 
 
-  Future<bool> createPayment({
+  Future<bool> createPayment({"${ApiConfig.baseUrl}/payments"
 
     required String userId,
     required String pdfId,
@@ -26,7 +26,7 @@ class PaymentService {
         "Content-Type": "application/json",
 
       },
-
+"${ApiConfig.baseUrl}/payments/$paymentId"
 
       body: jsonEncode({
 
@@ -46,7 +46,7 @@ class PaymentService {
     return response.statusCode == 200 ||
         response.statusCode == 201;
 
-  }
+  }"${ApiConfig.baseUrl}/payments/$paymentId"
 
 
 
@@ -96,4 +96,4 @@ Future<bool> approvePayment(
 
   return response.statusCode == 200;
 
-}
+}"${ApiConfig.baseUrl}/payments/$paymentId/approve"
