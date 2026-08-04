@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import '../services/order_service.dart';final OrderService orderService = OrderService();import 'package:flutter/material.dart';
 
 class MyOrdersScreen extends StatelessWidget {
   const MyOrdersScreen({super.key});
@@ -7,7 +7,33 @@ class MyOrdersScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
 
-      appBar: AppBar(
+      appBar: AppBar(body: FutureBuilder(
+  future: orderService.fetchOrders(),
+  builder: (context, snapshot) {
+
+    if (!snapshot.hasData) {
+      return const Center(
+        child: CircularProgressIndicator(),
+      );
+    }
+
+    final orders = snapshot.data!;
+
+    return ListView.builder(
+      itemCount: orders.length,
+      itemBuilder: (context, index) {
+
+        final order = orders[index];
+
+        return ListTile(
+          leading: const Icon(Icons.picture_as_pdf),
+          title: Text(order["pdfId"].toString()),
+          subtitle: Text(order["status"].toString()),
+        );
+      },
+    );
+  },
+),
         title: const Text("My Purchases"),
       ),
 
