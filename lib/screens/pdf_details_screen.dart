@@ -1,10 +1,41 @@
-import 'pdf_viewer_screen.dart';import '../services/order_service.dart';import 'package:flutter/material.dart';
+import '../services/payment_service.dart';final PaymentService paymentService = PaymentService();import 'pdf_viewer_screen.dart';import '../services/order_service.dart';import 'package:flutter/material.dart';
 import '../models/pdf_model.dart';
 
 class PdfDetailsScreen extends StatelessWidget {
   final PdfModel pdf;
 
-  const PdfDetailsScreen({ElevatedButton(
+  const PdfDetailsScreen({ElevatedButton(onPressed: () async {
+
+  final success =
+      await paymentService.createPayment(
+
+    userId: "current_user_id",
+
+    pdfId: pdf.id,
+
+    amount: pdf.price,
+
+  );
+
+
+  if(success){
+
+    ScaffoldMessenger.of(context)
+        .showSnackBar(
+
+      const SnackBar(
+
+        content: Text(
+          "Payment request created",
+        ),
+
+      ),
+
+    );
+
+  }
+
+},
   onPressed: () {
     Navigator.push(
       context,
