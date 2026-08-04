@@ -82,3 +82,4 @@ class _PdfListPageState extends State<PdfListPage> {
     );
   }
 }
+builder: (_) => PdfDetailsPage(pdf: pdf),PdfDetailsPage(pdf: pdf)
