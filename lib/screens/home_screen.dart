@@ -1,11 +1,21 @@
-import 'my_orders_screen.dart';ElevatedButton(
+import 'profile_screen.dart';import 'my_orders_screen.dart';ElevatedButton(
   onPressed: () {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => const MyOrdersScreen(),
 import '../services/auth_service.dart';      ),
+    );IconButton(
+  icon: const Icon(Icons.person),
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => const ProfileScreen(),
+      ),
     );
+  },
+),
   },
   child: const Text("My Purchases"),
 ),import 'my_orders_screen.dart';import 'pdf_details_screen.dart';import 'package:flutter/material.dart';
