@@ -4,11 +4,11 @@ import 'package:flutter/material.dart';
 class AdminPaymentScreen extends StatelessWidget {
 
   const AdminPaymentScreen({super.key});
-
+final PaymentService paymentService = PaymentService();
 
   @override
   Widget build(BuildContext context) {
-
+import '../services/payment_service.dart';
     return Scaffold(
 
       appBar: AppBar(
@@ -65,3 +65,36 @@ class AdminPaymentScreen extends StatelessWidget {
   }
 
 }
+ElevatedButton(
+
+  onPressed: () async {
+
+    final success =
+        await paymentService.approvePayment(
+          "PAYMENT_ID",
+        );
+
+
+    if(success){
+
+      ScaffoldMessenger.of(context)
+          .showSnackBar(
+
+        const SnackBar(
+          content: Text(
+            "Payment approved",
+          ),
+        ),
+
+      );
+
+    }
+
+  },
+
+
+  child: const Text(
+    "Approve",
+  ),
+
+)

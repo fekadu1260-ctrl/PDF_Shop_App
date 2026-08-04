@@ -81,3 +81,19 @@ class PaymentService {
 
 
 }
+Future<bool> approvePayment(
+    String paymentId) async {
+
+
+  final response = await http.put(
+
+    Uri.parse(
+      "http://localhost:3000/payments/$paymentId/approve",
+    ),
+
+  );
+
+
+  return response.statusCode == 200;
+
+}
