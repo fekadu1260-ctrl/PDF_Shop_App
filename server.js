@@ -1,60 +1,4 @@
-app.get("/payments/:id", async (req, res) => {
-
-  try {
-
-    const payment = await Payment.findById(
-      req.params.id
-    );
-
-
-    if(!payment){
-
-      return res.status(404).json({
-        message: "Payment not found"
-      });
-
-    }
-
-
-    res.json(payment);
-
-
-  } catch(error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
-  }
-
-});app.post("/orders", async (req, res) => app.post("/orders", async (req, res) => {
-
-  try {
-
-    const order = await Order.create(req.body);
-
-const Payment = require("./models/Payment");    res.status(201).json(order);
-
-  } catch (error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
-  }
-
-});{
-
-  const order = req.body;
-const Order = require("./models/Order");
-  console.log("New order:", order);
-
-  res.status(201).json({
-    message: "Order created",
-    ...order
-  });
-
-});const express = require("express");
+const express = require("express");
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 
@@ -70,91 +14,74 @@ const app = express();
 
 app.use(express.json());
 
+console.log("SERVER FILE LOADED");
+
+app.get("/", (req, res) => {
+  res.send("PDF Shop API Running");
+});
+
+
 app.get("/pdfs", async (req, res) => {
   try {
     const snapshot = await db.collection("pdfs").get();
 
-    let pdfs = [];
-
-    snapshot.forEach((doc) => {
-      pdfs.push({
-        id: doc.id,
-        ...doc.data()
-      });
-    });
+    const pdfs = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
     res.json(pdfs);
 
-  } catch (error) {
+  } catch (err) {
     res.status(500).json({
-      error: error.message
+      error: err.message
     });
   }
 });
+
+
+app.post("/orders", async (req, res) => {
+  try {
+    const order = req.body;
+
+    const docRef = await db.collection("orders").add({
+      ...order,
+      status: "pending",
+      createdAt: new Date()
+    });
+
+    res.json({
+      message: "Order created",
+      id: docRef.id
+    });
+
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
+app.get("/orders", async (req, res) => {
+  try {
+    const snapshot = await db.collection("orders").get();
+
+    const orders = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.json(orders);
+
+  } catch (err) {
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
 
 app.listen(3000, () => {
-  console.log("🚀 PDF Shop API running on port 3000");
-});
-app.post("/payments", async (req, res) => {
-
-  try {
-
-    const payment = new Payment({
-
-      userId: req.body.userId,
-
-      pdfId: req.body.pdfId,
-
-      amount: req.body.amount,
-
-      status: "pending",
-
-    });
-
-
-    await payment.save();
-
-
-    res.status(201).json(payment);
-
-
-  } catch(error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
-  }
-
-});
-app.put("/payments/:id/approve", async (req, res) => {
-
-  try {
-
-    const payment = await Payment.findByIdAndUpdate(
-
-      req.params.id,
-
-      {
-        status: "paid"
-      },
-
-      {
-        new: true
-      }
-
-    );
-
-
-    res.json(payment);
-
-
-  } catch(error) {
-
-    res.status(500).json({
-      error: error.message
-    });
-
-  }
-
+  console.log("PDF Shop API running on port 3000");
 });
