@@ -19,7 +19,7 @@ class AdminPdfService {
 
       body: jsonEncode({
 
-        "title": title,
+Uri.parse("${ApiConfig.baseUrl}/pdfs")        "title": title,
         "price": price,
         "fileUrl": fileUrl,
 
