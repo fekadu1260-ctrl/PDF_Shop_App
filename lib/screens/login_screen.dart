@@ -1,4 +1,4 @@
-imimport 'register_screen.dart';port 'package:flutter/material.dart';
+imimport 'home_screen.dart';import 'register_screen.dart';port 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -7,7 +7,12 @@ class LoginScreen extends StatefulWidget {
   @override
   State<LoginScreen> createState() => _LoginScreenState();
 }
-
+Navigator.pushReplacement(
+  context,
+  MaterialPageRoute(
+    builder: (context) => const HomeScreen(),
+  ),
+);
 class _LoginScreenState extends State<LoginScreen> {
 
   final emailController = TextEditingController();
