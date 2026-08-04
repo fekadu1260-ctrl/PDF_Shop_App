@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+imimport 'register_screen.dart';port 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -79,3 +79,16 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 }
+const SizedBox(height: 10),
+
+TextButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const RegisterScreen(),
+      ),
+    );
+  },
+  child: const Text("Create Account"),
+),
