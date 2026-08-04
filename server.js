@@ -1,4 +1,15 @@
-const express = require("express");
+app.post("/orders", async (req, res) => {
+
+  const order = req.body;
+
+  console.log("New order:", order);
+
+  res.status(201).json({
+    message: "Order created",
+    ...order
+  });
+
+});const express = require("express");
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 
