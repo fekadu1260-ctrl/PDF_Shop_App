@@ -1,7 +1,34 @@
-imimport 'home_screen.dart';import 'register_screen.dart';port 'package:flutter/material.dart';
+import 'admin_dashboard.dart';
+import '../services/user_service.dart';imimport 'home_screen.dart';import 'register_screen.dart';port 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends StatefulWidgefinal userService = UserService();
+
+final admin = await userService.isAdmin(
+  emailController.text,
+);
+
+
+if(admin){
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const AdminDashboard(),
+    ),
+  );
+
+}
+else{
+
+  Navigator.pushReplacement(
+    context,
+    MaterialPageRoute(
+      builder: (_) => const HomeScreen(),
+    ),
+  );
+
+}t {
   const LoginScreen({super.key});
 
   @override
