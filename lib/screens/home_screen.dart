@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'pdf_details_screen.dart';import 'package:flutter/material.dart';
 import '../models/pdf_model.dart';
 import '../services/pdf_service.dart';
 
@@ -90,6 +90,21 @@ class _HomeScreenState extends State<HomeScreen> {
           );
         },
       ),
+    );trailing: ElevatedButton(
+  child: const Text("View"),
+
+  onPressed: () {
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PdfDetailsScreen(
+          pdf: pdf,
+        ),
+      ),
     );
+
+  },
+),
   }
 }
