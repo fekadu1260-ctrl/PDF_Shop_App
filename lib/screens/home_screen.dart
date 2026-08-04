@@ -1,4 +1,4 @@
-import 'pdf_details_screen.dart';import 'package:flutter/material.dart';
+import 'my_orders_screen.dart';import 'pdf_details_screen.dart';import 'package:flutter/material.dart';
 import '../models/pdf_model.dart';
 import '../services/pdf_service.dart';
 
@@ -44,7 +44,17 @@ class _HomeScreenState extends State<HomeScreen> {
             );
 
           }
-
+ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const MyOrdersScreen(),
+      ),
+    );
+  },
+  child: const Text("My Purchases"),
+),
 
           if (snapshot.hasError) {
 
