@@ -1,10 +1,22 @@
-import '../services/order_service.dart';import 'package:flutter/material.dart';
+import 'pdf_viewer_screen.dart';import '../services/order_service.dart';import 'package:flutter/material.dart';
 import '../models/pdf_model.dart';
 
 class PdfDetailsScreen extends StatelessWidget {
   final PdfModel pdf;
 
-  const PdfDetailsScreen({
+  const PdfDetailsScreen({ElevatedButton(
+  onPressed: () {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PdfViewerScreen(
+          pdfUrl: pdf.fileUrl,
+        ),
+      ),
+    );
+  },
+  child: const Text("Open PDF"),
+),
     super.key,
     required this.pdf,
   });
