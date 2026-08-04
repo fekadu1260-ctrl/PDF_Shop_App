@@ -4,7 +4,7 @@ app.post("/orders", async (req, res) => app.post("/orders", async (req, res) => 
 
     const order = await Order.create(req.body);
 
-    res.status(201).json(order);
+const Payment = require("./models/Payment");    res.status(201).json(order);
 
   } catch (error) {
 
@@ -65,4 +65,36 @@ app.get("/pdfs", async (req, res) => {
 
 app.listen(3000, () => {
   console.log("🚀 PDF Shop API running on port 3000");
+});
+app.post("/payments", async (req, res) => {
+
+  try {
+
+    const payment = new Payment({
+
+      userId: req.body.userId,
+
+      pdfId: req.body.pdfId,
+
+      amount: req.body.amount,
+
+      status: "pending",
+
+    });
+
+
+    await payment.save();
+
+
+    res.status(201).json(payment);
+
+
+  } catch(error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
 });
