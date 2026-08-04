@@ -1,4 +1,33 @@
-app.post("/orders", async (req, res) => app.post("/orders", async (req, res) => {
+app.get("/payments/:id", async (req, res) => {
+
+  try {
+
+    const payment = await Payment.findById(
+      req.params.id
+    );
+
+
+    if(!payment){
+
+      return res.status(404).json({
+        message: "Payment not found"
+      });
+
+    }
+
+
+    res.json(payment);
+
+
+  } catch(error) {
+
+    res.status(500).json({
+      error: error.message
+    });
+
+  }
+
+});app.post("/orders", async (req, res) => app.post("/orders", async (req, res) => {
 
   try {
 
