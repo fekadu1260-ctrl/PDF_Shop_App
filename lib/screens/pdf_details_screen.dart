@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import '../services/order_service.dart';import 'package:flutter/material.dart';
 import '../models/pdf_model.dart';
 
 class PdfDetailsScreen extends StatelessWidget {
@@ -41,7 +41,19 @@ ElevatedButton(
                 fontSize: 28,
                 fontWeight: FontWeight.bold,
               ),
-            ),
+            ),final orderService = OrderService();
+
+await orderService.createOrder(
+  userId: "test_user",
+  pdfId: pdf.id,
+  amount: pdf.price,
+);
+
+ScaffoldMessenger.of(context).showSnackBar(
+  const SnackBar(
+    content: Text("Order created successfully"),
+  ),
+);
 
             const SizedBox(height: 20),
 
