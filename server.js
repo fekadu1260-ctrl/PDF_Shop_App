@@ -64,7 +64,26 @@ app.post("/orders", async (req, res) => {
 
 
 app.get("/orders", async (req, res) => {
+app.get("/payments", async (req, res) => {
   try {
+
+    const snapshot = await db.collection("payments").get();
+
+    const payments = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.json(payments);
+
+  } catch (err) {
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+});  try {
     const snapshot = await db.collection("orders").get();
 
     const orders = snapshot.docs.map(doc => ({
@@ -85,3 +104,53 @@ app.get("/orders", async (req, res) => {
 app.listen(3000, () => {
   console.log("PDF Shop API running on port 3000");
 });
+app.post("/payments", async (req, res) => {
+  try {
+
+    const payment = req.body;
+
+    const docRef = await db.collection("payments").add({
+      ...payment,
+      status: "pending",
+      createdAt: new Date()
+    });
+
+    res.json({
+      message: "Payment created",
+      id: docRef.id
+    });
+
+  } catch (err) {
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+});
+
+
+app.listen(3000, () => {
+  console.log("PDF Shop API running on port 3000");
+});
+app.get("/payments", async (req, res) => {
+  try {
+
+    const snapshot = await db.collection("payments").get();
+
+    const payments = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+
+    res.json(payments);
+
+  } catch (err) {
+
+    res.status(500).json({
+      error: err.message
+    });
+
+  }
+});
+
