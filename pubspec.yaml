@@ -1,4 +1,4 @@
-firebase_storage: ^12.4.10name: pdf_shop_app
+file_picker: ^8.1.2firebase_storage: ^12.4.10name: pdf_shop_app
 description: PDF Shop application
 publish_to: "none"
 
