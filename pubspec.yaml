@@ -1,4 +1,4 @@
-syncfusion_flutter_pdfviewer: ^28.2.7file_picker: ^8.1.2firebase_storage: ^12.4.10name: pdf_shop_app
+name: pdf_shop_app
 description: PDF Shop application
 publish_to: "none"
 
@@ -13,6 +13,9 @@ dependencies:
   http: ^1.2.2
   firebase_core: ^3.15.1
   firebase_auth: ^5.6.2
+  syncfusion_flutter_pdfviewer: ^28.2.7
+  file_picker: ^8.1.2
+  firebase_storage: ^12.4.10
 
 dev_dependencies:
   flutter_test:
