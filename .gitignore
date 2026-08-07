@@ -1,2 +1,7 @@
-node_modules/
+.dart_tool/
+build/
+.pub/
+.packages
+.pub-cache/
+*.lognode_modules/
 serviceAccountKey.json
