@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "417599045376",
+    "firebase_url": "https://eatandfee-default-rtdb.firebaseio.com",
+    "project_id": "eatandfee",
+    "storage_bucket": "eatandfee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:417599045376:android:7cc85ff9e39f3f2b7d7de5",
+        "android_client_info": {
+          "package_name": "Com.fekadu.eatandfee1260"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDmTp10nxcheYVJyCQc3xkP9zHOuc5TLQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

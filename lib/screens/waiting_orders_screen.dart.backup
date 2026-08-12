@@ -1,0 +1,124 @@
+import 'package:flutter/material.dart';
+
+import '../services/offline_order_service.dart';
+import '../services/order_sync_service.dart';
+
+class WaitingOrdersScreen extends StatefulWidget {
+  const WaitingOrdersScreen({super.key});
+
+  @override
+  State<WaitingOrdersScreen> createState() =>
+      _WaitingOrdersScreenState();
+}
+
+class _WaitingOrdersScreenState
+    extends State<WaitingOrdersScreen> {
+  final OfflineOrderService _service =
+      OfflineOrderService.instance;
+
+  List<OfflineOrder> _orders = [];
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadOrders();
+  }
+
+  Future<void> _loadOrders() async {
+    setState(() {
+      _loading = true;
+    });
+
+    try {
+      await OrderSyncService.instance.syncWaitingOrders();
+    } catch (_) {}
+
+    final orders = await _service.getWaitingOrders();
+
+    if (!mounted) return;
+
+    setState(() {
+      _orders = orders
+          .where(
+            (order) => order.syncStatus == 'waiting',
+          )
+          .toList();
+      _loading = false;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(
+          'Waiting Orders (${_orders.length})',
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: _loadOrders,
+          ),
+        ],
+      ),
+      body: _loading
+          ? const Center(
+              child: CircularProgressIndicator(),
+            )
+          : _orders.isEmpty
+              ? const Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.cloud_done,
+                        size: 70,
+                      ),
+                      SizedBox(height: 12),
+                      Text(
+                        'No waiting orders',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 6),
+                      Text(
+                        'All orders are synchronized.',
+                      ),
+                    ],
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadOrders,
+                  child: ListView.builder(
+                    padding: const EdgeInsets.all(10),
+                    itemCount: _orders.length,
+                    itemBuilder: (context, index) {
+                      final order = _orders[index];
+
+                      return Card(
+                        child: ListTile(
+                          leading: const CircleAvatar(
+                            child: Icon(Icons.sync),
+                          ),
+                          title: Text(
+                            'Order ${order.id}',
+                          ),
+                          subtitle: Text(
+                            'Customer: ${order.userId}\n'
+                            'PDF: ${order.pdfId}\n'
+                            'Amount: ${order.amount} Birr',
+                          ),
+                          trailing: const Icon(
+                            Icons.cloud_off,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+    );
+  }
+}

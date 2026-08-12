@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../models/category_model.dart';
 import '../services/category_service.dart';
 
 class CategoryScreen extends StatefulWidget {
@@ -10,85 +9,61 @@ class CategoryScreen extends StatefulWidget {
 }
 
 class _CategoryScreenState extends State<CategoryScreen> {
-
   final CategoryService service = CategoryService();
-
-  late Future<List<CategoryModel>> categories;
-
+  late Future<List<dynamic>> categories;
 
   @override
   void initState() {
     super.initState();
-    categories = service.fetchCategories();
+    categories = service.getCategories();
   }
-
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
       appBar: AppBar(
-        title: const Text("Categories"),
+        title: const Text('PDF Categories'),
       ),
-
-
-      body: FutureBuilder<List<CategoryModel>>(
-
+      body: FutureBuilder<List<dynamic>>(
         future: categories,
-
-        builder: (context, snapshot){
-
-          if(snapshot.connectionState ==
-              ConnectionState.waiting){
-
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
           }
 
-
-          if(!snapshot.hasData){
-
-            return const Center(
-              child: Text("No categories"),
-            );
-
+          if (snapshot.hasError) {
+            return Center(child: Text('Error: ${snapshot.error}'));
           }
 
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(child: Text('No categories found'));
+          }
 
           return ListView.builder(
-
+            padding: const EdgeInsets.all(16),
             itemCount: snapshot.data!.length,
+            itemBuilder: (context, index) {
+              final item = snapshot.data![index];
 
-            itemBuilder: (context,index){
+              String categoryName;
+              if (item is Map<String, dynamic>) {
+                categoryName =
+                    (item['name'] ?? item['title'] ?? 'Category').toString();
+              } else {
+                categoryName = item.toString();
+              }
 
-              final category =
-              snapshot.data![index];
-
-
-              return ListTile(
-
-                leading:
-                const Icon(Icons.category),
-
-                title:
-                Text(category.name),
-
+              return Card(
+                child: ListTile(
+                  leading: const Icon(Icons.folder),
+                  title: Text(categoryName),
+                  trailing: const Icon(Icons.arrow_forward_ios),
+                ),
               );
-
             },
-
           );
-
-
         },
-
       ),
-
     );
-
   }
-
 }

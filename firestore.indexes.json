@@ -1,0 +1,219 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "Autoid",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Createdat",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "Favorites",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Userid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Created",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "Featured%20by%20language%20and%20show%20newst%20first",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Language",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Createdat",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "Featured%20pdfs%20by%20catagory",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Catagoryid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Isfeatured",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "Notification%20",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Target",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Created",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "Orders",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Userid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Createdat",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "Pdfs%20colaction%20id",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Catagoryid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Ispublished",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Createdat",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "Purchases",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Userid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Purchasedat",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "Reviews",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Pdfid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Createdid",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    },
+    {
+      "collectionGroup": "Sort%20pdfs%20by%20price",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "Price",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "Creatdat",
+          "order": "DESCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "DESCENDING"
+        }
+      ],
+      "density": "SPARSE_ALL"
+    }
+  ],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "Pdfs",
+      "fieldPath": "Fee",
+      "ttl": false,
+      "indexes": [
+        {
+          "order": "ASCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "order": "DESCENDING",
+          "queryScope": "COLLECTION"
+        },
+        {
+          "arrayConfig": "CONTAINS",
+          "queryScope": "COLLECTION"
+        }
+      ]
+    }
+  ]
+}

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/pdf_service.dart';
+
 import '../models/pdf_model.dart';
+import '../services/pdf_service.dart';
 import 'pdf_details.dart';
 
 class PdfListPage extends StatefulWidget {
@@ -11,7 +12,6 @@ class PdfListPage extends StatefulWidget {
 }
 
 class _PdfListPageState extends State<PdfListPage> {
-
   final PdfService pdfService = PdfService();
 
   late Future<List<PdfModel>> pdfs;
@@ -26,14 +26,11 @@ class _PdfListPageState extends State<PdfListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("PDF Library"),
+        title: const Text('PDF Shop'),
       ),
-
       body: FutureBuilder<List<PdfModel>>(
         future: pdfs,
-
         builder: (context, snapshot) {
-
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Center(
               child: CircularProgressIndicator(),
@@ -42,38 +39,38 @@ class _PdfListPageState extends State<PdfListPage> {
 
           if (snapshot.hasError) {
             return Center(
-              child: Text("Error: ${snapshot.error}"),
+              child: Text(
+                'Error loading PDFs: ${snapshot.error}',
+                textAlign: TextAlign.center,
+              ),
             );
           }
 
-          final data = snapshot.data ?? [];
+          final pdfList = snapshot.data ?? [];
+
+          if (pdfList.isEmpty) {
+            return const Center(
+              child: Text('No PDFs available.'),
+            );
+          }
 
           return ListView.builder(
-            itemCount: data.length,
-
+            itemCount: pdfList.length,
             itemBuilder: (context, index) {
+              final pdf = pdfList[index];
 
-              final pdf = data[index];
-
-              return Card(
-                child: ListTile(
-                  leading: const Icon(Icons.picture_as_pdf),
-
-                  title: Text(pdf.title),
-
-                  subtitle: Text(
-                    "${pdf.category} - ${pdf.price} Birr",
-                  ),
-
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => const PdfDetailsPage(),
-                      ),
-                    );
-                  },
-                ),
+              return ListTile(
+                leading: const Icon(Icons.picture_as_pdf),
+                title: Text(pdf.title),
+                subtitle: Text('Price: ${pdf.price}'),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => PdfDetailsPage(pdf: pdf),
+                    ),
+                  );
+                },
               );
             },
           );
@@ -82,4 +79,3 @@ class _PdfListPageState extends State<PdfListPage> {
     );
   }
 }
-builder: (_) => PdfDetailsPage(pdf: pdf),PdfDetailsPage(pdf: pdf)

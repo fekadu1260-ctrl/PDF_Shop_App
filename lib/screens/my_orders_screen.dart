@@ -1,4 +1,7 @@
-import '../services/order_service.dart';final OrderService orderService = OrderService();import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
+import '../services/order_service.dart';
+
+final OrderService orderService = OrderService();
 
 class MyOrdersScreen extends StatelessWidget {
   const MyOrdersScreen({super.key});
@@ -6,52 +9,55 @@ class MyOrdersScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
-      appBar: AppBar(body: FutureBuilder(
-  future: orderService.fetchOrders(),
-  builder: (context, snapshot) {
-
-    if (!snapshot.hasData) {
-      return const Center(
-        child: CircularProgressIndicator(),
-      );
-    }
-
-    final orders = snapshot.data!;
-
-    return ListView.builder(
-      itemCount: orders.length,
-      itemBuilder: (context, index) {
-
-        final order = orders[index];
-
-        return ListTile(
-          leading: const Icon(Icons.picture_as_pdf),
-          title: Text(order["pdfId"].toString()),
-          subtitle: Text(order["status"].toString()),
-        );
-      },
-    );
-  },
-),
+      appBar: AppBar(
         title: const Text("My Purchases"),
       ),
+      body: FutureBuilder(
+        future: orderService.fetchOrders(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
 
-      body: ListView(
-        padding: const EdgeInsets.all(20),
+          if (snapshot.hasError) {
+            return Center(
+              child: Text(
+                "Error loading orders: ${snapshot.error}",
+              ),
+            );
+          }
 
-        children: [
+          if (!snapshot.hasData || snapshot.data!.isEmpty) {
+            return const Center(
+              child: Text("No purchases found."),
+            );
+          }
 
-          Card(
-            child: ListTile(
-              leading: const Icon(Icons.picture_as_pdf),
-              title: const Text("Sample PDF"),
-              subtitle: const Text("Status: Pending Payment"),
-              trailing: const Icon(Icons.arrow_forward),
-            ),
-          ),
+          final orders = snapshot.data!;
 
-        ],
+          return ListView.builder(
+            padding: const EdgeInsets.all(20),
+            itemCount: orders.length,
+            itemBuilder: (context, index) {
+              final order = orders[index];
+
+              return Card(
+                child: ListTile(
+                  leading: const Icon(Icons.picture_as_pdf),
+                  title: Text(
+                    order["pdfId"].toString(),
+                  ),
+                  subtitle: Text(
+                    "Status: ${order["status"]}",
+                  ),
+                  trailing: const Icon(Icons.arrow_forward),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

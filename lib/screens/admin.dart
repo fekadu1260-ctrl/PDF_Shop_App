@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'my_orders_screen.dart';
 
 class AdminPage extends StatelessWidget {
   const AdminPage({super.key});
@@ -9,12 +10,10 @@ class AdminPage extends StatelessWidget {
       appBar: AppBar(
         title: const Text("Admin Dashboard"),
       ),
-
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-
             Card(
               child: ListTile(
                 leading: const Icon(Icons.upload_file),
@@ -24,17 +23,22 @@ class AdminPage extends StatelessWidget {
                 onTap: () {},
               ),
             ),
-
             Card(
               child: ListTile(
                 leading: const Icon(Icons.shopping_cart),
                 title: const Text("Orders"),
                 subtitle: const Text("View customer purchases"),
                 trailing: const Icon(Icons.arrow_forward_ios),
-                onTap: () {},
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => const MyOrdersScreen(),
+                    ),
+                  );
+                },
               ),
             ),
-
             Card(
               child: ListTile(
                 leading: const Icon(Icons.people),
@@ -44,7 +48,6 @@ class AdminPage extends StatelessWidget {
                 onTap: () {},
               ),
             ),
-
           ],
         ),
       ),

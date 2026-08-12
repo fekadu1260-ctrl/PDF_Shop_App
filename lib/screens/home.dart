@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'categories.dart';
+
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
@@ -12,14 +13,7 @@ class HomePage extends StatelessWidget {
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
-onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const CategoriesPage(),
-    ),
-  );
-},        children: [
+        children: [
           const Text(
             "Welcome!",
             style: TextStyle(
@@ -27,17 +21,22 @@ onTap: () {
               fontWeight: FontWeight.bold,
             ),
           ),
-
           const SizedBox(height: 20),
-
           Card(
             child: ListTile(
               leading: const Icon(Icons.menu_book),
               title: const Text("Engineering PDFs"),
               subtitle: const Text("Civil, Electrical, Mechanical"),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CategoriesPage(),
+                  ),
+                );
+              },
             ),
           ),
-
           Card(
             child: ListTile(
               leading: const Icon(Icons.school),
@@ -45,14 +44,12 @@ onTap: () {
               subtitle: const Text("Lecture notes and exams"),
             ),
           ),
-
           Card(
             child: ListTile(
               leading: const Icon(Icons.download),
               title: const Text("My Downloads"),
             ),
           ),
-
           Card(
             child: ListTile(
               leading: const Icon(Icons.person),
@@ -64,13 +61,3 @@ onTap: () {
     );
   }
 }
-
-onTap: () {
-  Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (context) => const CategoriesPage(),
-    ),
-  );
-},
-

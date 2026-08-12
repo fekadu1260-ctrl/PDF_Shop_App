@@ -21,18 +21,14 @@ class LoginPage extends StatelessWidget {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 30),
-
             TextField(
               decoration: const InputDecoration(
                 labelText: "Email",
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 20),
-
             TextField(
               obscureText: true,
               decoration: const InputDecoration(
@@ -40,9 +36,7 @@ class LoginPage extends StatelessWidget {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 30),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -50,7 +44,6 @@ class LoginPage extends StatelessWidget {
                 child: const Text("Login"),
               ),
             ),
-
             TextButton(
               onPressed: () {},
               child: const Text("Create Account"),
@@ -60,5 +53,4 @@ class LoginPage extends StatelessWidget {
       ),
     );
   }
-import 'register.dart'
-
+}

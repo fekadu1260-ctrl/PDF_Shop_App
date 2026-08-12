@@ -9,7 +9,6 @@ initializeApp({
 });
 
 const db = getFirestore();
-
 const app = express();
 
 app.use(express.json());
@@ -20,6 +19,10 @@ app.get("/", (req, res) => {
   res.send("PDF Shop API Running");
 });
 
+
+/* =========================
+   PDFS
+========================= */
 
 app.get("/pdfs", async (req, res) => {
   try {
@@ -40,6 +43,10 @@ app.get("/pdfs", async (req, res) => {
 });
 
 
+/* =========================
+   ORDERS
+========================= */
+
 app.post("/orders", async (req, res) => {
   try {
     const order = req.body;
@@ -50,9 +57,11 @@ app.post("/orders", async (req, res) => {
       createdAt: new Date()
     });
 
-    res.json({
+    res.status(201).json({
       message: "Order created",
-      id: docRef.id
+      id: docRef.id,
+      ...order,
+      status: "pending"
     });
 
   } catch (err) {
@@ -64,26 +73,7 @@ app.post("/orders", async (req, res) => {
 
 
 app.get("/orders", async (req, res) => {
-app.get("/payments", async (req, res) => {
   try {
-
-    const snapshot = await db.collection("payments").get();
-
-    const payments = snapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-
-    res.json(payments);
-
-  } catch (err) {
-
-    res.status(500).json({
-      error: err.message
-    });
-
-  }
-});  try {
     const snapshot = await db.collection("orders").get();
 
     const orders = snapshot.docs.map(doc => ({
@@ -101,12 +91,12 @@ app.get("/payments", async (req, res) => {
 });
 
 
-app.listen(3000, () => {
-  console.log("PDF Shop API running on port 3000");
-});
+/* =========================
+   PAYMENTS
+========================= */
+
 app.post("/payments", async (req, res) => {
   try {
-
     const payment = req.body;
 
     const docRef = await db.collection("payments").add({
@@ -115,59 +105,44 @@ app.post("/payments", async (req, res) => {
       createdAt: new Date()
     });
 
-    res.json({
+    res.status(201).json({
       message: "Payment created",
-      id: docRef.id
+      id: docRef.id,
+      ...payment,
+      status: "pending"
     });
 
   } catch (err) {
-
     res.status(500).json({
       error: err.message
     });
-
   }
 });
 
 
-app.patch("/payments/:id/approve", async (req, res) => {
+app.get("/payments", async (req, res) => {
   try {
+    const snapshot = await db.collection("payments").get();
 
-    const paymentId = req.params.id;
+    const payments = snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
 
-    const paymentRef = db.collection("payments").doc(paymentId);
-
-    const paymentDoc = await paymentRef.get();
-
-    if (!paymentDoc.exists) {
-      return res.status(404).json({
-        error: "Payment not found"
-      });
-    }
-
-    const payment = paymentDoc.data();
-
-    await paymentRef.update({
-      status: "paid"
-    });
-
-    if (payment.orderId) {
-      await db.collection("orders")
-        .doc(payment.orderId)
-        .update({
-          status: "paid"
-        });
-    }
-
-    res.json({
-      message: "Payment approved"
-    });
+    res.json(payments);
 
   } catch (err) {
-
     res.status(500).json({
       error: err.message
     });
-
   }
+});
+
+
+/* =========================
+   SERVER
+========================= */
+
+app.listen(3000, () => {
+  console.log("PDF Shop API running on port 3000");
 });

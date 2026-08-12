@@ -7,8 +7,7 @@ class AuthService {
     String email,
     String password,
   ) async {
-    UserCredential result =
-        await _auth.createUserWithEmailAndPassword(
+    UserCredential result = await _auth.createUserWithEmailAndPassword(
       email: email,
       password: password,
     );
@@ -20,8 +19,7 @@ class AuthService {
     String email,
     String password,
   ) async {
-    UserCredential result =
-        await _auth.signInWithEmailAndPassword(
+    UserCredential result = await _auth.signInWithEmailAndPassword(
       email: email,
       password: password,
     );

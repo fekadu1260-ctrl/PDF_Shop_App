@@ -15,24 +15,22 @@ class OrderModel {
     required this.createdAt,
   });
 
-
   factory OrderModel.fromJson(Map<String, dynamic> json) {
     return OrderModel(
-      id: json['_id'] ?? '',
+      id: json['id'] ?? '',
       userId: json['userId'] ?? '',
       pdfId: json['pdfId'] ?? '',
       amount: double.tryParse(
-        json['amount'].toString(),
-      ) ?? 0,
-
+            json['amount'].toString(),
+          ) ??
+          0,
       status: json['status'] ?? 'pending',
-
       createdAt: DateTime.tryParse(
-        json['createdAt'].toString(),
-      ) ?? DateTime.now(),
+            json['createdAt'].toString(),
+          ) ??
+          DateTime.now(),
     );
   }
-
 
   Map<String, dynamic> toJson() {
     return {

@@ -1,15 +1,26 @@
-|import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/material.dart';
 
-void main() async {
+import 'screens/login_screen.dart';
+import 'services/order_sync_service.dart';
+
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await Firebase.initializeApp();
 
+  // Try to upload any offline orders that are waiting.
+  // If there is no internet, the app continues normally.
+  try {
+    await OrderSyncService.instance.syncWaitingOrders();
+  } catch (_) {
+    // Offline mode: ignore sync errors.
+  }
+
   runApp(const PdfShopApp());
 }
 
-chome: const LoginScreen(),home: const LoginScreen(),import 'screens/login_screen.dart';lass PdfShopApp extends StatelessWidget {
+class PdfShopApp extends StatelessWidget {
   const PdfShopApp({super.key});
 
   @override
@@ -20,17 +31,7 @@ chome: const LoginScreen(),home: const LoginScreen(),import 'screens/login_scree
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: Scaffold(
-        appBar: AppBar(
-          title: const Text('PDF Shop'),
-        ),
-        body: const Center(
-          child: Text(
-            'Welcome to PDF Shop',
-            style: TextStyle(fontSize: 24),
-          ),
-        ),
-      ),
+      home: const LoginScreen(),
     );
   }
 }

@@ -13,25 +13,20 @@ class AddPdfPage extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-
             TextField(
               decoration: const InputDecoration(
                 labelText: "PDF Title",
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 15),
-
             TextField(
               decoration: const InputDecoration(
                 labelText: "Category",
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 15),
-
             TextField(
               decoration: const InputDecoration(
                 labelText: "Price (ETB)",
@@ -39,9 +34,7 @@ class AddPdfPage extends StatelessWidget {
               ),
               keyboardType: TextInputType.number,
             ),
-
             const SizedBox(height: 25),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
