@@ -3,5 +3,13 @@ build/
 .pub/
 .packages
 .pub-cache/
-*.lognode_modules/
+*.log
+node_modules/
+.idea/
+.metadata
+.flutter-plugins-dependencies
+*.iml
+*.bak
+*.before_*
+*.backup
 serviceAccountKey.json

@@ -4,19 +4,23 @@ import 'package:path_provider/path_provider.dart';
 
 class OfflineOrder {
   final String id;
+  final String orderNumber;
   final String userId;
   final String pdfId;
   final double amount;
   final String status;
+  final String paymentReference;
   final DateTime createdAt;
   final String syncStatus;
 
   OfflineOrder({
     required this.id,
+    required this.orderNumber,
     required this.userId,
     required this.pdfId,
     required this.amount,
     required this.status,
+    required this.paymentReference,
     required this.createdAt,
     required this.syncStatus,
   });
@@ -24,10 +28,12 @@ class OfflineOrder {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'orderNumber': orderNumber,
       'userId': userId,
       'pdfId': pdfId,
       'amount': amount,
       'status': status,
+      'paymentReference': paymentReference,
       'createdAt': createdAt.toIso8601String(),
       'syncStatus': syncStatus,
     };
@@ -35,22 +41,28 @@ class OfflineOrder {
 
   factory OfflineOrder.fromJson(Map<String, dynamic> json) {
     return OfflineOrder(
-      id: json['id'] ?? '',
-      userId: json['userId'] ?? '',
-      pdfId: json['pdfId'] ?? '',
+      id: json['id']?.toString() ?? '',
+      orderNumber: json['orderNumber']?.toString() ??
+          json['id']?.toString() ??
+          '',
+      userId: json['userId']?.toString() ?? '',
+      pdfId: json['pdfId']?.toString() ?? '',
       amount: (json['amount'] as num?)?.toDouble() ?? 0,
-      status: json['status'] ?? 'pending',
+      status: json['status']?.toString() ?? 'pending',
+      paymentReference:
+          json['paymentReference']?.toString() ?? '',
       createdAt: DateTime.tryParse(
             json['createdAt']?.toString() ?? '',
           ) ??
           DateTime.now(),
-      syncStatus: json['syncStatus'] ?? 'waiting',
+      syncStatus: json['syncStatus']?.toString() ?? 'waiting',
     );
   }
 }
 
 class OfflineOrderService {
-  static final OfflineOrderService instance = OfflineOrderService._internal();
+  static final OfflineOrderService instance =
+      OfflineOrderService._internal();
 
   OfflineOrderService._internal();
 
@@ -68,22 +80,42 @@ class OfflineOrderService {
       )
       .length;
 
+  String _generateOrderNumber() {
+    final now = DateTime.now();
+
+    final date =
+        '${now.year.toString().padLeft(4, '0')}'
+        '${now.month.toString().padLeft(2, '0')}'
+        '${now.day.toString().padLeft(2, '0')}';
+
+    final timestamp = now.millisecondsSinceEpoch
+        .toString()
+        .substring(7);
+
+    return 'PS-$date-$timestamp';
+  }
+
   Future<OfflineOrder> createOfflineOrder({
     required String userId,
     required String pdfId,
     required double amount,
   }) async {
+    await _loadOrders();
+
     final order = OfflineOrder(
       id: 'OFF-${DateTime.now().millisecondsSinceEpoch}',
+      orderNumber: _generateOrderNumber(),
       userId: userId,
       pdfId: pdfId,
       amount: amount,
       status: 'pending',
+      paymentReference: '',
       createdAt: DateTime.now(),
       syncStatus: 'waiting',
     );
 
     _orders.add(order);
+
     await _saveOrders();
 
     return order;
@@ -91,10 +123,17 @@ class OfflineOrderService {
 
   Future<List<OfflineOrder>> getWaitingOrders() async {
     await _loadOrders();
-    return List.unmodifiable(_orders);
+
+    return List.unmodifiable(
+      _orders.where(
+        (order) => order.syncStatus == 'waiting',
+      ),
+    );
   }
 
   Future<void> markAsSynced(String orderId) async {
+    await _loadOrders();
+
     final index = _orders.indexWhere(
       (order) => order.id == orderId,
     );
@@ -105,10 +144,12 @@ class OfflineOrderService {
 
     _orders[index] = OfflineOrder(
       id: old.id,
+      orderNumber: old.orderNumber,
       userId: old.userId,
       pdfId: old.pdfId,
       amount: old.amount,
       status: old.status,
+      paymentReference: old.paymentReference,
       createdAt: old.createdAt,
       syncStatus: 'synced',
     );
@@ -117,7 +158,8 @@ class OfflineOrderService {
   }
 
   Future<File> _getStorageFile() async {
-    final directory = await getApplicationDocumentsDirectory();
+    final directory =
+        await getApplicationDocumentsDirectory();
 
     final dataDirectory = Directory(
       '${directory.path}/pdf_shop_data',
@@ -161,7 +203,9 @@ class OfflineOrderService {
       _orders
         ..clear()
         ..addAll(
-          decoded.whereType<Map<String, dynamic>>().map(OfflineOrder.fromJson),
+          decoded
+              .whereType<Map<String, dynamic>>()
+              .map(OfflineOrder.fromJson),
         );
     } catch (_) {}
   }

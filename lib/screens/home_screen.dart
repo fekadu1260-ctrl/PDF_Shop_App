@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../models/pdf_model.dart';
 import '../services/auth_service.dart';
 import '../services/pdf_service.dart';
 import 'category_screen.dart';
@@ -140,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
                 final filtered = snapshot.data!
                     .where(
-                      (pdf) => pdf['title'].toString().toLowerCase().contains(
+                      (pdf) => pdf.title.toString().toLowerCase().contains(
                             searchText.toLowerCase(),
                           ),
                     )
@@ -155,7 +154,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 return ListView.builder(
                   itemCount: filtered.length,
                   itemBuilder: (context, index) {
-                    final pdf = PdfModel.fromJson(filtered[index]);
+                    final pdf = filtered[index];
 
                     return Card(
                       child: ListTile(
