@@ -13,3 +13,6 @@ node_modules/
 *.before_*
 *.backup
 serviceAccountKey.json
+
+# Android release signing credentials
+key.properties
