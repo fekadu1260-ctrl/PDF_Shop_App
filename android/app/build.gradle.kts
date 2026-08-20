@@ -29,7 +29,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "Com.fekadu.eatandfee1260"
+        applicationId = "com.fekadu.eatandfee1260"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
