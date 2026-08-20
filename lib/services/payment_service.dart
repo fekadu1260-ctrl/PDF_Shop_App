@@ -12,10 +12,23 @@ class PaymentService {
     required String method,
     required String paymentReference,
   }) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("User is not signed in");
+    }
+
+    final idToken = await user.getIdToken(true);
+
+    if (idToken == null || idToken.isEmpty) {
+      throw Exception("Could not obtain Firebase ID token");
+    }
+
     final response = await http.post(
       Uri.parse("${ApiConfig.baseUrl}/payments"),
       headers: {
         "Content-Type": "application/json",
+        "Authorization": "Bearer $idToken",
       },
       body: jsonEncode({
         "userId": userId,
@@ -64,8 +77,23 @@ class PaymentService {
   }
 
   Future<List<Map<String, dynamic>>> fetchPayments() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception("Admin is not signed in");
+    }
+
+    final idToken = await user.getIdToken(true);
+
+    if (idToken == null || idToken.isEmpty) {
+      throw Exception("Could not obtain Firebase ID token");
+    }
+
     final response = await http.get(
       Uri.parse("${ApiConfig.baseUrl}/payments"),
+      headers: {
+        "Authorization": "Bearer $idToken",
+      },
     );
 
     if (response.statusCode == 200) {
@@ -78,7 +106,9 @@ class PaymentService {
       );
     }
 
-    throw Exception("Failed to load payments");
+    throw Exception(
+      "Failed to load payments (${response.statusCode}): ${response.body}",
+    );
   }
 
   Future<bool> approvePayment(String paymentId) async {
