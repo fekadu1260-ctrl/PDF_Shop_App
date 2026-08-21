@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import 'admin.dart';
+import '../services/app_language.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -65,6 +66,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
     if (!mounted) return;
 
     Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  Widget _languageOption(
+    BuildContext context,
+    AppLanguage language,
+    String label,
+  ) {
+    return ListTile(
+      title: Text(label),
+      trailing: ValueListenableBuilder<AppLanguage>(
+        valueListenable: LanguageService.current,
+        builder: (_, current, __) {
+          return Icon(
+            current == language
+                ? Icons.radio_button_checked
+                : Icons.radio_button_unchecked,
+          );
+        },
+      ),
+      onTap: () {
+        LanguageService.setLanguage(language);
+        Navigator.pop(context);
+      },
+    );
   }
 
   @override
@@ -139,6 +164,55 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 subtitle: Text("Standard PDF Shop account"),
               ),
             ),
+
+          Card(
+            child: ListTile(
+              leading: const Icon(Icons.language),
+              title: const Text("Language"),
+              subtitle: ValueListenableBuilder<AppLanguage>(
+                valueListenable: LanguageService.current,
+                builder: (_, language, __) {
+                  return Text(LanguageService.languageName);
+                },
+              ),
+              trailing: const Icon(Icons.arrow_forward_ios),
+              onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text("Choose Language"),
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          _languageOption(
+                            context,
+                            AppLanguage.english,
+                            "English",
+                          ),
+                          _languageOption(
+                            context,
+                            AppLanguage.amharic,
+                            "አማርኛ",
+                          ),
+                          _languageOption(
+                            context,
+                            AppLanguage.tigrinya,
+                            "ትግርኛ",
+                          ),
+                          _languageOption(
+                            context,
+                            AppLanguage.oromo,
+                            "Afaan Oromoo",
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
+            ),
+          ),
 
           const SizedBox(height: 25),
 
