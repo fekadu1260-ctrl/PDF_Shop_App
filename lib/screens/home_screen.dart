@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
+import '../services/app_language.dart';
 import '../services/pdf_service.dart';
 import 'category_screen.dart';
 import 'pdf_details_screen.dart';
@@ -30,9 +31,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return ValueListenableBuilder<AppLanguage>(
+      valueListenable: LanguageService.current,
+      builder: (context, language, child) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PDF Shop'),
+        title: Text(LanguageService.text('appTitle')),
         actions: [
           IconButton(
             icon: const Icon(Icons.category),
@@ -58,7 +62,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.people),
-            tooltip: 'Offline Customers',
+            tooltip: LanguageService.text('offlineCustomers'),
             onPressed: () {
               Navigator.push(
                 context,
@@ -70,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.sync),
-            tooltip: 'Waiting Orders',
+            tooltip: LanguageService.text('waitingOrders'),
             onPressed: () {
               Navigator.push(
                 context,
@@ -101,8 +105,8 @@ class _HomeScreenState extends State<HomeScreen> {
           Padding(
             padding: const EdgeInsets.all(10),
             child: TextField(
-              decoration: const InputDecoration(
-                hintText: 'Search PDFs...',
+              decoration: InputDecoration(
+                hintText: LanguageService.text('searchPdfs'),
                 prefixIcon: Icon(Icons.search),
                 border: OutlineInputBorder(),
               ),
@@ -132,8 +136,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
 
                 if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                  return const Center(
-                    child: Text('No PDFs found'),
+                  return Center(
+                    child: Text(LanguageService.text('noPdfs')),
                   );
                 }
 
@@ -146,8 +150,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     .toList();
 
                 if (filtered.isEmpty) {
-                  return const Center(
-                    child: Text('No matching PDFs'),
+                  return Center(
+                    child: Text(LanguageService.text('noMatchingPdfs')),
                   );
                 }
 
@@ -187,6 +191,8 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
+    );
+      },
     );
   }
 }
