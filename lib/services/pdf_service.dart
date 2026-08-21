@@ -5,23 +5,37 @@ import 'api_config.dart';
 
 class PdfService {
   Future<List<PdfModel>> fetchPdfs() async {
-    final response = await http.get(
-      Uri.parse(
-        "${ApiConfig.baseUrl}/pdfs",
-      ),
-    );
+    final url = "${ApiConfig.baseUrl}/pdfs";
 
-    if (response.statusCode == 200) {
-      List data = jsonDecode(response.body);
+    try {
+      final response = await http
+          .get(Uri.parse(url))
+          .timeout(const Duration(seconds: 10));
 
-      return data
+      if (response.statusCode != 200) {
+        throw Exception(
+          'Server returned HTTP ${response.statusCode}',
+        );
+      }
+
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is! List) {
+        throw Exception('Invalid PDF data received from server');
+      }
+
+      return decoded
           .map(
-            (pdf) => PdfModel.fromJson(pdf),
+            (pdf) => PdfModel.fromJson(
+              Map<String, dynamic>.from(pdf),
+            ),
           )
           .toList();
-    } else {
+    } catch (e) {
       throw Exception(
-        "Failed to load PDFs",
+        'Could not connect to PDF server.\n'
+        'Server: $url\n'
+        'Reason: $e',
       );
     }
   }
