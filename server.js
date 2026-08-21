@@ -219,7 +219,21 @@ app.get("/orders", async (req, res) => {
 
 app.post("/payments", requireUser, async (req, res) => {
   try {
-    const payment = req.body;
+    const { pdfId, amount, method, paymentReference } = req.body;
+
+    if (!pdfId || amount == null || !method || !paymentReference) {
+      return res.status(400).json({
+        error: "pdfId, amount, method and paymentReference are required"
+      });
+    }
+
+    const payment = {
+      userId: req.user.uid,
+      pdfId,
+      amount,
+      method,
+      paymentReference
+    };
 
     const docRef = await db.collection("payments").add({
       ...payment,
