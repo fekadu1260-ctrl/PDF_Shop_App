@@ -111,6 +111,61 @@ app.get("/pdfs", async (req, res) => {
 
 
 /* =========================
+   ADMIN PDF MANAGEMENT
+========================= */
+
+app.post("/pdfs", requireAdmin, async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      price,
+      category,
+      fileUrl
+    } = req.body;
+
+    if (!title || !fileUrl) {
+      return res.status(400).json({
+        error: "Title and fileUrl are required"
+      });
+    }
+
+    const numericPrice = Number(price);
+
+    if (!Number.isFinite(numericPrice) || numericPrice < 0) {
+      return res.status(400).json({
+        error: "Invalid price"
+      });
+    }
+
+    const docRef = await db.collection("pdfs").add({
+      title: String(title).trim(),
+      description: String(description || "").trim(),
+      price: numericPrice,
+      category: String(category || "General").trim(),
+      fileUrl: String(fileUrl).trim(),
+      createdAt: new Date()
+    });
+
+    res.status(201).json({
+      message: "PDF created",
+      id: docRef.id,
+      title: String(title).trim(),
+      description: String(description || "").trim(),
+      price: numericPrice,
+      category: String(category || "General").trim(),
+      fileUrl: String(fileUrl).trim()
+    });
+  } catch (err) {
+    console.error("PDF creation failed:", err.message);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+/* =========================
    ORDERS
 ========================= */
 
