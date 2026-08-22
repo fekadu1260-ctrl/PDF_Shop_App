@@ -6,7 +6,7 @@ class ApiConfig {
   static const String productionBaseUrl = "https://pdf-shop-api.onrender.com";
 
   // Current development mode.
-  static const bool production = false;
+  static const bool production = true;
 
   static String get baseUrl =>
       production ? productionBaseUrl : localBaseUrl;
