@@ -528,6 +528,8 @@ app.put("/payments/:id/approve", requireAdmin, async (req, res) => {
    SERVER
 ========================= */
 
-app.listen(3000, "0.0.0.0", () => {
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, "0.0.0.0", () => {
   console.log("PDF Shop API running on port 3000");
 });
