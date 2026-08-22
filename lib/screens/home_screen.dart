@@ -117,6 +117,39 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
           ),
+
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+            child: Row(
+              children: [
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: () {},
+                    icon: const Icon(Icons.shopping_cart),
+                    label: const Text('Buy PDF'),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const OfflineCustomersScreen(),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.people),
+                    label: Text(
+                      LanguageService.text('offlineCustomers'),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
           Expanded(
             child: FutureBuilder<List<dynamic>>(
               future: pdfs,

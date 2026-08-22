@@ -1,15 +1,43 @@
 import 'dart:convert';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
 import 'api_config.dart';
 import 'offline_order_service.dart';
 
 class OrderSyncService {
-  static final OrderSyncService instance = OrderSyncService._internal();
+  static final OrderSyncService instance =
+      OrderSyncService._internal();
 
   OrderSyncService._internal();
 
-  final OfflineOrderService _offlineService = OfflineOrderService.instance;
+  final OfflineOrderService _offlineService =
+      OfflineOrderService.instance;
+
+  Future<String> _getAuthToken() async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user == null) {
+      throw Exception('User is not authenticated');
+    }
+
+    final token = await user.getIdToken();
+
+    if (token == null || token.isEmpty) {
+      throw Exception('Unable to obtain Firebase authentication token');
+    }
+
+    return token;
+  }
+
+  Future<Map<String, String>> _authHeaders() async {
+    final token = await _getAuthToken();
+
+    return {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $token',
+    };
+  }
 
   Future<int> syncWaitingOrders() async {
     final orders = await _offlineService.getWaitingOrders();
@@ -22,13 +50,12 @@ class OrderSyncService {
       }
 
       try {
+        final headers = await _authHeaders();
+
         final response = await http.post(
           Uri.parse("${ApiConfig.baseUrl}/orders"),
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: headers,
           body: jsonEncode({
-            "userId": order.userId,
             "pdfId": order.pdfId,
             "amount": order.amount,
             "status": order.status,
@@ -36,13 +63,14 @@ class OrderSyncService {
           }),
         );
 
-        if (response.statusCode == 200 || response.statusCode == 201) {
+        if (response.statusCode == 200 ||
+            response.statusCode == 201) {
           await _offlineService.markAsSynced(order.id);
           syncedCount++;
         }
       } catch (_) {
-        // Internet is still unavailable.
-        // Leave the order waiting for the next attempt.
+        // Internet unavailable or authentication unavailable.
+        // Leave the order waiting for the next sync attempt.
       }
     }
 

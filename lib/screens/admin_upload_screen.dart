@@ -84,7 +84,7 @@ class _AdminUploadScreenState extends State<AdminUploadScreen> {
     try {
       String fileUrl = url;
 
-      // If a local PDF was selected, upload it to Firebase Storage first.
+      // If a local PDF was selected, upload it to our Node.js PDF server.
       if (selectedFile != null) {
         fileUrl = await storageService.uploadPdf(selectedFile!);
       }

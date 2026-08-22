@@ -26,15 +26,10 @@ class _LoginScreenState extends State<LoginScreen> {
   String _normalizePhone(String value) {
     var phone = value.trim().replaceAll(' ', '');
 
-    // Allow international numbers such as:
-    // +251912345678
-    // +14155552671
-    // +447911123456
-    //
-    // Also allow numbers beginning with 00:
-    // 00251912345678 -> +251912345678
-    if (phone.startsWith('00')) {
-      phone = '+${phone.substring(2)}';
+    if (phone.startsWith('09')) {
+      phone = '+251${phone.substring(1)}';
+    } else if (phone.startsWith('9')) {
+      phone = '+251$phone';
     }
 
     return phone;
@@ -43,11 +38,11 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> sendOtp() async {
     final phone = _normalizePhone(phoneController.text);
 
-    if (!phone.startsWith('+') || phone.length < 8) {
+    if (!phone.startsWith('+2519') || phone.length != 13) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Enter a valid international phone number, for example +251912345678.',
+            'Enter a valid Ethiopian phone number, for example 0912345678',
           ),
         ),
       );
@@ -74,9 +69,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
-              content: Text(
-                'OTP sent successfully. Check your SMS.',
-              ),
+              content: Text('OTP sent successfully. Check your SMS.'),
             ),
           );
         },
@@ -102,9 +95,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text(
-                  'Automatic verification failed: $e',
-                ),
+                content: Text('Automatic verification failed: $e'),
               ),
             );
           }
@@ -120,8 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                'Phone verification failed: '
-                '${error.message ?? error.code}',
+                'Phone verification failed: ${error.message ?? error.code}',
               ),
             ),
           );
@@ -142,9 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'Could not send OTP: $e',
-          ),
+          content: Text('Could not send OTP: $e'),
         ),
       );
     }
@@ -178,9 +166,7 @@ class _LoginScreenState extends State<LoginScreen> {
       );
 
       if (user == null) {
-        throw Exception(
-          'Firebase did not return a user.',
-        );
+        throw Exception('Firebase did not return a user.');
       }
 
       if (!mounted) return;
@@ -207,8 +193,7 @@ class _LoginScreenState extends State<LoginScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'OTP verification failed: '
-            '${e.message ?? e.code}',
+            'OTP verification failed: ${e.message ?? e.code}',
           ),
         ),
       );
@@ -221,9 +206,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            'OTP verification failed: $e',
-          ),
+          content: Text('OTP verification failed: $e'),
         ),
       );
     }
@@ -266,8 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 8),
 
             const Text(
-              'Login with your phone number. '
-              'No email account required.',
+              'Login with your phone number. No email account required.',
               textAlign: TextAlign.center,
             ),
 
@@ -279,7 +261,7 @@ class _LoginScreenState extends State<LoginScreen> {
               enabled: !otpSent && !loading,
               decoration: const InputDecoration(
                 labelText: 'Phone Number',
-                hintText: '+251912345678',
+                hintText: '0912345678',
                 prefixIcon: Icon(Icons.phone),
                 border: OutlineInputBorder(),
               ),
@@ -302,9 +284,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         )
                       : const Icon(Icons.sms),
                   label: Text(
-                    loading
-                        ? 'Sending OTP...'
-                        : 'Send OTP',
+                    loading ? 'Sending OTP...' : 'Send OTP',
                   ),
                 ),
               ),
@@ -340,9 +320,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         )
                       : const Icon(Icons.verified),
                   label: Text(
-                    loading
-                        ? 'Verifying...'
-                        : 'Verify OTP',
+                    loading ? 'Verifying...' : 'Verify OTP',
                   ),
                 ),
               ),
@@ -359,9 +337,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           otpController.clear();
                         });
                       },
-                child: const Text(
-                  'Change phone number',
-                ),
+                child: const Text('Change phone number'),
               ),
             ],
           ],

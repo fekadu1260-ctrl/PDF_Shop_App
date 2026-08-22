@@ -16,3 +16,7 @@ serviceAccountKey.json
 
 # Android release signing credentials
 key.properties
+
+# Local uploaded/test PDF files
+uploads/
+test.pdf

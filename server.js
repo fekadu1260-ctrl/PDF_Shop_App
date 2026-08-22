@@ -1,4 +1,7 @@
 const express = require("express");
+const multer = require("multer");
+const path = require("path");
+const fs = require("fs");
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
@@ -13,6 +16,48 @@ const db = getFirestore();
 const app = express();
 
 app.use(express.json());
+
+// =========================
+// LOCAL PDF FILE STORAGE
+// =========================
+const uploadsDir = path.join(__dirname, "uploads");
+
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+const pdfStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, uploadsDir);
+  },
+
+  filename: (_req, file, cb) => {
+    const safeName = path
+      .basename(file.originalname)
+      .replace(/[^a-zA-Z0-9._-]/g, "_");
+
+    cb(null, `${Date.now()}-${safeName}`);
+  },
+});
+
+const pdfUpload = multer({
+  storage: pdfStorage,
+  limits: {
+    fileSize: 100 * 1024 * 1024,
+  },
+  fileFilter: (_req, file, cb) => {
+    const isPdf =
+      file.mimetype === "application/pdf" ||
+      path.extname(file.originalname).toLowerCase() === ".pdf";
+
+    if (!isPdf) {
+      return cb(new Error("Only PDF files are allowed."));
+    }
+
+    cb(null, true);
+  },
+});
+
 
 /* =========================
    ADMIN AUTHENTICATION
@@ -88,8 +133,43 @@ app.get("/", (req, res) => {
 
 
 /* =========================
+   PDF FILE UPLOAD
+========================= */
+
+app.post("/upload-pdf", requireAdmin, (req, res) => {
+  pdfUpload.single("file")(req, res, (err) => {
+    if (err) {
+      console.error("PDF upload failed:", err.message);
+
+      return res.status(400).json({
+        error: err.message
+      });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({
+        error: "No PDF file received"
+      });
+    }
+
+    const fileUrl =
+      `${req.protocol}://${req.get("host")}/pdf-files/${encodeURIComponent(req.file.filename)}`;
+
+    res.status(201).json({
+      message: "PDF file uploaded successfully",
+      fileName: req.file.filename,
+      originalName: req.file.originalname,
+      size: req.file.size,
+      fileUrl
+    });
+  });
+});
+
+/* =========================
    PDFS
 ========================= */
+
+app.use("/pdf-files", express.static(uploadsDir));
 
 app.get("/pdfs", async (req, res) => {
   try {
@@ -169,24 +249,40 @@ app.post("/pdfs", requireAdmin, async (req, res) => {
    ORDERS
 ========================= */
 
-app.post("/orders", async (req, res) => {
+app.post("/orders", requireUser, async (req, res) => {
   try {
-    const order = req.body;
+    const { pdfId, amount, status, createdAt } = req.body;
 
-    const docRef = await db.collection("orders").add({
-      ...order,
-      status: "pending",
-      createdAt: new Date()
-    });
+    if (!pdfId || amount == null) {
+      return res.status(400).json({
+        error: "pdfId and amount are required"
+      });
+    }
+
+    const order = {
+      userId: req.user.uid,
+      pdfId: String(pdfId),
+      amount: Number(amount),
+      status: String(status || "pending"),
+      createdAt: createdAt ? new Date(createdAt) : new Date()
+    };
+
+    if (!Number.isFinite(order.amount) || order.amount < 0) {
+      return res.status(400).json({
+        error: "Invalid amount"
+      });
+    }
+
+    const docRef = await db.collection("orders").add(order);
 
     res.status(201).json({
       message: "Order created",
       id: docRef.id,
-      ...order,
-      status: "pending"
+      ...order
     });
 
   } catch (err) {
+    console.error("Order creation failed:", err.message);
     res.status(500).json({
       error: err.message
     });
@@ -194,9 +290,42 @@ app.post("/orders", async (req, res) => {
 });
 
 
-app.get("/orders", async (req, res) => {
+async function requireUserOrAdmin(req, res, next) {
   try {
-    const snapshot = await db.collection("orders").get();
+    const authHeader = req.headers.authorization || "";
+
+    if (!authHeader.startsWith("Bearer ")) {
+      return res.status(401).json({
+        error: "Missing Firebase ID token"
+      });
+    }
+
+    const idToken = authHeader.substring(7);
+    const decodedToken = await getAuth().verifyIdToken(idToken);
+
+    req.user = decodedToken;
+    next();
+  } catch (err) {
+    console.error("Order authentication failed:", err.message);
+    return res.status(401).json({
+      error: "Invalid or expired Firebase ID token"
+    });
+  }
+}
+
+app.get("/orders", requireUserOrAdmin, async (req, res) => {
+  try {
+    const isAdmin = req.user.admin === true;
+
+    let snapshot;
+
+    if (isAdmin) {
+      snapshot = await db.collection("orders").get();
+    } else {
+      snapshot = await db.collection("orders")
+        .where("userId", "==", req.user.uid)
+        .get();
+    }
 
     const orders = snapshot.docs.map(doc => ({
       id: doc.id,
@@ -206,6 +335,7 @@ app.get("/orders", async (req, res) => {
     res.json(orders);
 
   } catch (err) {
+    console.error("Order loading failed:", err.message);
     res.status(500).json({
       error: err.message
     });
