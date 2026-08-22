@@ -10,7 +10,8 @@ const { getStorage } = require("firebase-admin/storage");
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
 
 initializeApp({
-  credential: cert(serviceAccount)
+  credential: cert(serviceAccount),
+  storageBucket: "eatandfee.firebasestorage.app"
 });
 
 const db = getFirestore();
