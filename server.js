@@ -5,6 +5,7 @@ const fs = require("fs");
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
+const { getStorage } = require("firebase-admin/storage");
 
 const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
 
@@ -13,6 +14,7 @@ initializeApp({
 });
 
 const db = getFirestore();
+const bucket = getStorage().bucket();
 const app = express();
 
 app.use(express.json());
@@ -26,19 +28,7 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 
-const pdfStorage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadsDir);
-  },
-
-  filename: (_req, file, cb) => {
-    const safeName = path
-      .basename(file.originalname)
-      .replace(/[^a-zA-Z0-9._-]/g, "_");
-
-    cb(null, `${Date.now()}-${safeName}`);
-  },
-});
+const pdfStorage = multer.memoryStorage();
 
 const pdfUpload = multer({
   storage: pdfStorage,
@@ -137,10 +127,9 @@ app.get("/", (req, res) => {
 ========================= */
 
 app.post("/upload-pdf", requireAdmin, (req, res) => {
-  pdfUpload.single("file")(req, res, (err) => {
+  pdfUpload.single("file")(req, res, async (err) => {
     if (err) {
       console.error("PDF upload failed:", err.message);
-
       return res.status(400).json({
         error: err.message
       });
@@ -152,16 +141,47 @@ app.post("/upload-pdf", requireAdmin, (req, res) => {
       });
     }
 
-    const fileUrl =
-      `${req.protocol}://${req.get("host")}/pdf-files/${encodeURIComponent(req.file.filename)}`;
+    try {
+      const safeName = path
+        .basename(req.file.originalname)
+        .replace(/[^a-zA-Z0-9._-]/g, "_");
 
-    res.status(201).json({
-      message: "PDF file uploaded successfully",
-      fileName: req.file.filename,
-      originalName: req.file.originalname,
-      size: req.file.size,
-      fileUrl
-    });
+      const fileName = `${Date.now()}-${safeName}`;
+      const file = bucket.file(`pdfs/${fileName}`);
+
+      await file.save(req.file.buffer, {
+        metadata: {
+          contentType: "application/pdf",
+          metadata: {
+            originalName: req.file.originalname
+          }
+        },
+        resumable: false
+      });
+
+      const [signedUrl] = await file.getSignedUrl({
+        action: "read",
+        expires: "12-31-2035"
+      });
+
+      console.log("PDF uploaded to Firebase Storage:", fileName);
+
+      return res.status(201).json({
+        message: "PDF uploaded successfully to Firebase Storage",
+        fileName,
+        originalName: req.file.originalname,
+        size: req.file.size,
+        fileUrl: signedUrl
+      });
+
+    } catch (uploadError) {
+      console.error("Firebase Storage upload failed:", uploadError);
+
+      return res.status(500).json({
+        error: "Firebase Storage upload failed",
+        details: uploadError.message
+      });
+    }
   });
 });
 
@@ -169,7 +189,6 @@ app.post("/upload-pdf", requireAdmin, (req, res) => {
    PDFS
 ========================= */
 
-app.use("/pdf-files", express.static(uploadsDir));
 
 app.get("/pdfs", async (req, res) => {
   try {
