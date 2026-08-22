@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: pdf-shop-api
+    runtime: node
+    buildCommand: npm install
+    startCommand: node server.js
+    envVars:
+      - key: FIREBASE_SERVICE_ACCOUNT_JSON
+        sync: false
