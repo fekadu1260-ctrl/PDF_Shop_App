@@ -3,7 +3,7 @@ class ApiConfig {
   static const String localBaseUrl = "http://192.168.8.8:3000";
 
   // Production API will go here when deployed.
-  static const String productionBaseUrl = "https://YOUR-PRODUCTION-API";
+  static const String productionBaseUrl = "https://pdf-shop-api.onrender.com";
 
   // Current development mode.
   static const bool production = false;
