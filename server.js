@@ -7,7 +7,9 @@ const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const { getStorage } = require("firebase-admin/storage");
 
-const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON);
+const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
+  ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+  : require("./serviceAccountKey.json");
 
 initializeApp({
   credential: cert(serviceAccount),
@@ -190,6 +192,47 @@ app.post("/upload-pdf", requireAdmin, (req, res) => {
    PDFS
 ========================= */
 
+
+
+/* =========================
+   CATEGORIES
+   ========================= */
+
+app.get("/categories", async (req, res) => {
+  try {
+    const snapshot = await db.collection("pdfs").get();
+
+    const categoryMap = new Map();
+
+    snapshot.docs.forEach(doc => {
+      const data = doc.data();
+      const category = String(data.category || "").trim();
+
+      if (category) {
+        const key = category.toLowerCase();
+
+        if (!categoryMap.has(key)) {
+          categoryMap.set(key, category);
+        }
+      }
+    });
+
+    const categories = Array.from(categoryMap.entries())
+      .sort((a, b) => a[1].localeCompare(b[1]))
+      .map(([key, name]) => ({
+        name
+      }));
+
+    res.json(categories);
+
+  } catch (err) {
+    console.error("GET /categories error:", err);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
 
 app.get("/pdfs", async (req, res) => {
   try {
@@ -505,24 +548,93 @@ app.get("/payments/:id", requirePaymentOwnerOrAdmin, async (req, res) => {
 
 app.put("/payments/:id/approve", requireAdmin, async (req, res) => {
   try {
-    await db.collection("payments").doc(req.params.id).update({
-      status: "approved",
-      approvedAt: new Date()
+    const paymentId = req.params.id;
+    const paymentRef = db.collection("payments").doc(paymentId);
+
+    const result = await db.runTransaction(async (transaction) => {
+      const paymentDoc = await transaction.get(paymentRef);
+
+      if (!paymentDoc.exists) {
+        const error = new Error("Payment not found");
+        error.statusCode = 404;
+        throw error;
+      }
+
+      const payment = paymentDoc.data();
+
+      if (!payment.userId || !payment.pdfId) {
+        const error = new Error("Payment is missing userId or pdfId");
+        error.statusCode = 400;
+        throw error;
+      }
+
+      const orderRef = db.collection("orders").doc(`payment_${paymentId}`);
+      const orderDoc = await transaction.get(orderRef);
+      const now = new Date();
+
+      if (!orderDoc.exists) {
+        const order = {
+          userId: String(payment.userId),
+          pdfId: String(payment.pdfId),
+          amount: Number(payment.amount),
+          status: "paid",
+          paymentId: paymentId,
+          paymentMethod: String(payment.method || ""),
+          paymentReference: String(payment.paymentReference || ""),
+          createdAt: payment.createdAt || now,
+          paidAt: now
+        };
+
+        if (!Number.isFinite(order.amount) || order.amount < 0) {
+          const error = new Error("Invalid payment amount");
+          error.statusCode = 400;
+          throw error;
+        }
+
+        transaction.set(orderRef, order);
+      } else {
+        const existingOrder = orderDoc.data() || {};
+
+        if (existingOrder.status !== "paid") {
+          transaction.update(orderRef, {
+            status: "paid",
+            paidAt: now
+          });
+        }
+      }
+
+      transaction.update(paymentRef, {
+        status: "approved",
+        approvedAt: now
+      });
+
+      return {
+        orderId: orderRef.id,
+        alreadyExisted: orderDoc.exists
+      };
     });
 
     res.json({
-      message: "Payment approved",
-      id: req.params.id,
-      status: "approved"
+      message: result.alreadyExisted
+          ? "Payment approved; existing order confirmed"
+          : "Payment approved and order created",
+      id: paymentId,
+      status: "approved",
+      orderId: result.orderId
     });
 
   } catch (err) {
-    res.status(500).json({
+    console.error("Payment approval failed:", err.message);
+
+    const statusCode = Number.isInteger(err.statusCode)
+        ? err.statusCode
+        : 500;
+
+    res.status(statusCode).json({
       error: err.message
     });
   }
 });
-
 
 /* =========================
    SERVER
