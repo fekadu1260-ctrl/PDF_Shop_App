@@ -20,3 +20,24 @@ key.properties
 # Local uploaded/test PDF files
 uploads/
 test.pdf
+
+# Local project backups
+*.backup
+*.backup_*
+*.before-*
+*.before_*
+*.tar.gz
+
+# Flutter/build generated files
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# Android generated files
+android/.gradle/
+
+# Additional temporary Android backups
+*backup*
+android/settings.gradle.kts.bad-local-test
+android/settings.gradle.kts.resolution-failed

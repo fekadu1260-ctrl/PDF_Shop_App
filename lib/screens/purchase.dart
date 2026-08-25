@@ -264,7 +264,7 @@ class _PurchasePageState extends State<PurchasePage> {
             _accountCard(
               icon: Icons.account_balance,
               title: 'CBE',
-              account: '10005577315911',
+              account: '1000557731591',
               name: 'Fikadu / ፍቃዱ',
               buttonText: 'Copy CBE Account',
             ),

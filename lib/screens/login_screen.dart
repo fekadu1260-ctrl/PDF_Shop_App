@@ -24,16 +24,24 @@ class _LoginScreenState extends State<LoginScreen> {
   bool loading = false;
 
   String _normalizePhone(String value) {
-    var phone = value.trim().replaceAll(' ', '');
+    var phone = value.trim().replaceAll(RegExp(r'[\s\-()]'), '');
 
-    // Allow international numbers such as:
-    // +251912345678
-    // +14155552671
-    // +447911123456
-    //
-    // Also allow numbers beginning with 00:
+    // Ethiopian local format:
+    // 0912345678 -> +251912345678
+    // 0912...    -> +251912...
+    if (phone.startsWith('09') && phone.length == 10) {
+      phone = '+251${phone.substring(1)}';
+    }
+
+    // Ethiopian local format without the leading 0:
+    // 912345678 -> +251912345678
+    else if (RegExp(r'^9\d{8}$').hasMatch(phone)) {
+      phone = '+251$phone';
+    }
+
+    // International format:
     // 00251912345678 -> +251912345678
-    if (phone.startsWith('00')) {
+    else if (phone.startsWith('00')) {
       phone = '+${phone.substring(2)}';
     }
 
@@ -81,33 +89,15 @@ class _LoginScreenState extends State<LoginScreen> {
           );
         },
 
-        onVerificationCompleted: (credential) async {
-          try {
-            await authService.signInWithCredential(credential);
+        onVerificationCompleted: (credential) {
+          // Manual OTP verification is required.
+          // Do NOT automatically sign the customer in here.
+          // The customer must enter the SMS OTP and press Verify OTP.
+          if (!mounted) return;
 
-            if (!mounted) return;
-
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const MainNavigationScreen(),
-              ),
-            );
-          } catch (e) {
-            if (!mounted) return;
-
-            setState(() {
-              loading = false;
-            });
-
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text(
-                  'Automatic verification failed: $e',
-                ),
-              ),
-            );
-          }
+          setState(() {
+            loading = false;
+          });
         },
 
         onVerificationFailed: (error) {
@@ -309,7 +299,27 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
 
-            if (otpSent) ...[
+            SizedBox(
+  width: double.infinity,
+  child: OutlinedButton.icon(
+    onPressed: loading
+        ? null
+        : () {
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const MainNavigationScreen(),
+              ),
+            );
+          },
+    icon: const Icon(Icons.store),
+    label: const Text('Continue to Shop'),
+  ),
+),
+
+const SizedBox(height: 12),
+
+if (otpSent) ...[
               const SizedBox(height: 10),
 
               TextField(

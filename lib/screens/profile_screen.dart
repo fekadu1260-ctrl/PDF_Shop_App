@@ -116,9 +116,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
           Card(
             child: ListTile(
-              leading: const Icon(Icons.email),
-              title: const Text("Email"),
-              subtitle: Text(user?.email ?? "No email"),
+              leading: const Icon(Icons.phone),
+              title: const Text("Phone Number"),
+              subtitle: Text(user?.phoneNumber ?? "No phone number"),
             ),
           ),
 
