@@ -1,3 +1,4 @@
+require("dotenv").config();
 const express = require("express");
 const multer = require("multer");
 const path = require("path");
@@ -6,6 +7,7 @@ const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const { getStorage } = require("firebase-admin/storage");
+const jwt = require("jsonwebtoken");
 
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
@@ -89,6 +91,220 @@ async function requireAdmin(req, res, next) {
 }
 
 /* =========================
+   MANUAL CUSTOMER AUTHENTICATION
+========================= */
+
+const JWT_SECRET = process.env.JWT_SECRET;
+
+if (!JWT_SECRET) {
+  console.warn("WARNING: JWT_SECRET is not set. Customer manual authentication will not work until it is configured.");
+}
+
+function createCustomerToken(customer) {
+  if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET is not configured on the server.");
+  }
+
+  return jwt.sign(
+    {
+      uid: String(customer.id),
+      phone: String(customer.phone),
+      customer: true
+    },
+    JWT_SECRET,
+    {
+      expiresIn: "30d"
+    }
+  );
+}
+
+function verifyCustomerToken(token) {
+  if (!JWT_SECRET) {
+    throw new Error("JWT_SECRET is not configured on the server.");
+  }
+
+  return jwt.verify(token, JWT_SECRET);
+}
+
+/*
+ * Customer OTP is MANUAL.
+ *
+ * The server does NOT send SMS.
+ * The administrator manually sets the OTP for a phone number.
+ * Customers only receive the OTP from the administrator.
+ */
+app.post("/auth/request-otp", async (req, res) => {
+  try {
+    const phone = String(req.body.phone || "").trim();
+
+    if (!/^\+2519\d{8}$/.test(phone)) {
+      return res.status(400).json({
+        error: "Invalid Ethiopian phone number"
+      });
+    }
+
+    const ref = db.collection("manualOtpRequests").doc(phone.replace("+", ""));
+
+    await ref.set({
+      phone,
+      status: "waiting_for_manual_otp",
+      requestedAt: new Date(),
+      verified: false
+    }, { merge: true });
+
+    return res.json({
+      message: "Verification requested. Please contact the administrator for your manual OTP.",
+      status: "waiting_for_manual_otp"
+    });
+
+  } catch (err) {
+    console.error("Manual OTP request failed:", err.message);
+
+    return res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
+app.post("/auth/verify-otp", async (req, res) => {
+  try {
+    const phone = String(req.body.phone || "").trim();
+    const otp = String(req.body.otp || "").trim();
+
+    if (!/^\+2519\d{8}$/.test(phone)) {
+      return res.status(400).json({
+        error: "Invalid Ethiopian phone number"
+      });
+    }
+
+    if (!/^\d{6}$/.test(otp)) {
+      return res.status(400).json({
+        error: "OTP must be exactly 6 digits"
+      });
+    }
+
+    const otpRef = db.collection("manualOtpRequests").doc(phone.replace("+", ""));
+    const otpDoc = await otpRef.get();
+
+    if (!otpDoc.exists) {
+      return res.status(400).json({
+        error: "No OTP request found for this phone number"
+      });
+    }
+
+    const otpData = otpDoc.data() || {};
+
+    if (otpData.status !== "waiting_for_manual_otp") {
+      return res.status(400).json({
+        error: "OTP request is not active"
+      });
+    }
+
+    if (String(otpData.otp || "") !== otp) {
+      return res.status(401).json({
+        error: "Incorrect manual OTP"
+      });
+    }
+
+    const customerRef = db.collection("customers").doc(phone.replace("+", ""));
+    const customerDoc = await customerRef.get();
+
+    let customer;
+
+    if (customerDoc.exists) {
+      customer = {
+        id: customerDoc.id,
+        ...customerDoc.data()
+      };
+    } else {
+      customer = {
+        id: customerRef.id,
+        phone,
+        name: "",
+        createdAt: new Date()
+      };
+
+      await customerRef.set(customer);
+    }
+
+    await otpRef.update({
+      status: "used",
+      verified: true,
+      verifiedAt: new Date(),
+      otp: null
+    });
+
+    const token = createCustomerToken(customer);
+
+    return res.json({
+      message: "Manual OTP verified successfully",
+      token,
+      userId: customer.id,
+      phone
+    });
+
+  } catch (err) {
+    console.error("Manual OTP verification failed:", err.message);
+
+    return res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
+/*
+ * ADMIN-ONLY MANUAL OTP SETTER
+ *
+ * This does NOT send anything to the customer.
+ * The administrator manually chooses the 6-digit OTP
+ * and stores it for the requested phone number.
+ */
+app.put("/auth/admin/set-manual-otp", requireAdmin, async (req, res) => {
+  try {
+    const phone = String(req.body.phone || "").trim();
+    const otp = String(req.body.otp || "").trim();
+
+    if (!/^\+2519\d{8}$/.test(phone)) {
+      return res.status(400).json({
+        error: "Invalid Ethiopian phone number"
+      });
+    }
+
+    if (!/^\d{6}$/.test(otp)) {
+      return res.status(400).json({
+        error: "OTP must be exactly 6 digits"
+      });
+    }
+
+    const ref = db.collection("manualOtpRequests").doc(phone.replace("+", ""));
+
+    await ref.set({
+      phone,
+      otp,
+      status: "waiting_for_manual_otp",
+      otpSetAt: new Date(),
+      otpSetBy: req.user.uid
+    }, { merge: true });
+
+    return res.json({
+      message: "Manual OTP saved successfully",
+      phone,
+      status: "waiting_for_manual_otp"
+    });
+
+  } catch (err) {
+    console.error("Manual OTP setup failed:", err.message);
+
+    return res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
+/* =========================
    USER AUTHENTICATION
 ========================= */
 
@@ -98,26 +314,30 @@ async function requireUser(req, res, next) {
 
     if (!authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
-        error: "Missing Firebase ID token"
+        error: "Missing customer authentication token"
       });
     }
 
-    const idToken = authHeader.substring(7);
+    const token = authHeader.substring(7);
+    const decodedToken = verifyCustomerToken(token);
 
-    const decodedToken = await getAuth().verifyIdToken(idToken);
+    if (decodedToken.customer !== true || !decodedToken.uid) {
+      return res.status(401).json({
+        error: "Invalid customer authentication token"
+      });
+    }
 
     req.user = decodedToken;
     next();
 
   } catch (err) {
-    console.error("User authentication failed:", err.message);
+    console.error("Customer authentication failed:", err.message);
 
     return res.status(401).json({
-      error: "Invalid or expired Firebase ID token"
+      error: "Invalid or expired customer authentication token"
     });
   }
 }
-
 console.log("SERVER FILE LOADED");
 
 app.get("/", (req, res) => {
@@ -359,19 +579,37 @@ async function requireUserOrAdmin(req, res, next) {
 
     if (!authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
-        error: "Missing Firebase ID token"
+        error: "Missing authentication token"
       });
     }
 
-    const idToken = authHeader.substring(7);
-    const decodedToken = await getAuth().verifyIdToken(idToken);
+    const token = authHeader.substring(7);
 
-    req.user = decodedToken;
+    // First try Firebase authentication for administrators.
+    try {
+      const firebaseUser = await getAuth().verifyIdToken(token);
+      req.user = firebaseUser;
+      return next();
+    } catch (_) {
+      // Not a Firebase token; try the manual customer JWT.
+    }
+
+    const customerUser = verifyCustomerToken(token);
+
+    if (customerUser.customer !== true || !customerUser.uid) {
+      return res.status(401).json({
+        error: "Invalid authentication token"
+      });
+    }
+
+    req.user = customerUser;
     next();
+
   } catch (err) {
     console.error("Order authentication failed:", err.message);
+
     return res.status(401).json({
-      error: "Invalid or expired Firebase ID token"
+      error: "Invalid or expired authentication token"
     });
   }
 }
@@ -479,12 +717,21 @@ async function requirePaymentOwnerOrAdmin(req, res, next) {
 
     if (!authHeader.startsWith("Bearer ")) {
       return res.status(401).json({
-        error: "Missing Firebase ID token"
+        error: "Missing authentication token"
       });
     }
 
-    const idToken = authHeader.substring(7);
-    const decodedToken = await getAuth().verifyIdToken(idToken);
+    const token = authHeader.substring(7);
+
+    let decodedToken;
+
+    // Firebase token = administrator authentication.
+    try {
+      decodedToken = await getAuth().verifyIdToken(token);
+    } catch (_) {
+      // Otherwise try manual customer JWT.
+      decodedToken = verifyCustomerToken(token);
+    }
 
     const paymentDoc = await db
       .collection("payments")
@@ -520,7 +767,7 @@ async function requirePaymentOwnerOrAdmin(req, res, next) {
     console.error("Payment access check failed:", err.message);
 
     return res.status(401).json({
-      error: "Invalid or expired Firebase ID token"
+      error: "Invalid or expired authentication token"
     });
   }
 }

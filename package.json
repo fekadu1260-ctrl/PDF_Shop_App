@@ -1,8 +1,11 @@
 {
   "dependencies": {
     "@google-cloud/firestore": "^8.7.0",
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "firebase-admin": "^14.2.0",
+    "jsonwebtoken": "^9.0.3",
     "multer": "^2.2.0"
   }
 }
