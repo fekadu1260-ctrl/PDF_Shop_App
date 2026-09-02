@@ -8,6 +8,18 @@ const { getFirestore } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const { getStorage } = require("firebase-admin/storage");
 const jwt = require("jsonwebtoken");
+function createCustomerToken(customer) {
+  return jwt.sign(
+    {
+      userId: customer.id,
+      phone: customer.phone,
+      role: "customer"
+    },
+    process.env.JWT_SECRET,
+    { expiresIn: "30d" }
+  );
+}
+
 
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
