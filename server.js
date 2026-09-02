@@ -119,7 +119,7 @@ return "+" + phone;
 }
 
 // Already correct: +251912345678
-if (/^+2519\d{8}$/.test(phone)) {
+if (/^\+2519\d{8}$/.test(phone)) {
 return phone;
 }
 
