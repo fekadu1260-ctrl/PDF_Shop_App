@@ -89,221 +89,140 @@ async function requireAdmin(req, res, next) {
     });
   }
 }
-
-/* =========================
-   MANUAL CUSTOMER AUTHENTICATION
-========================= */
-
-const JWT_SECRET = process.env.JWT_SECRET;
-
-if (!JWT_SECRET) {
-  console.warn("WARNING: JWT_SECRET is not set. Customer manual authentication will not work until it is configured.");
-}
-
-function createCustomerToken(customer) {
-  if (!JWT_SECRET) {
-    throw new Error("JWT_SECRET is not configured on the server.");
-  }
-
-  return jwt.sign(
-    {
-      uid: String(customer.id),
-      phone: String(customer.phone),
-      customer: true
-    },
-    JWT_SECRET,
-    {
-      expiresIn: "30d"
-    }
-  );
-}
-
-function verifyCustomerToken(token) {
-  if (!JWT_SECRET) {
-    throw new Error("JWT_SECRET is not configured on the server.");
-  }
-
-  return jwt.verify(token, JWT_SECRET);
-}
-
 /*
- * Customer OTP is MANUAL.
- *
- * The server does NOT send SMS.
- * The administrator manually sets the OTP for a phone number.
- * Customers only receive the OTP from the administrator.
- */
+
+* FIXED MANUAL CUSTOMER OTP
+* 
+* No SMS is sent.
+* Customers use the fixed OTP configured in MANUAL_OTP.
+  */
+
+const MANUAL_OTP = process.env.MANUAL_OTP;
+
+if (!MANUAL_OTP) {
+console.warn(
+"WARNING: MANUAL_OTP is not configured. Customer login will not work."
+);
+}
+
+function normalizeEthiopianPhone(phone) {
+phone = String(phone || "").trim();
+
+// 0912345678 -> +251912345678
+if (/^09\d{8}$/.test(phone)) {
+return "+251" + phone.substring(1);
+}
+
+// 251912345678 -> +251912345678
+if (/^2519\d{8}$/.test(phone)) {
+return "+" + phone;
+}
+
+// Already correct: +251912345678
+if (/^+2519\d{8}$/.test(phone)) {
+return phone;
+}
+
+return null;
+}
+
 app.post("/auth/request-otp", async (req, res) => {
-  try {
-    const phone = String(req.body.phone || "").trim();
+try {
+const phone = normalizeEthiopianPhone(req.body.phone);
 
-    if (!/^\+2519\d{8}$/.test(phone)) {
-      return res.status(400).json({
-        error: "Invalid Ethiopian phone number"
-      });
-    }
+if (!phone) {
+  return res.status(400).json({
+    error: "Invalid Ethiopian phone number"
+  });
+}
 
-    const ref = db.collection("manualOtpRequests").doc(phone.replace("+", ""));
-
-    await ref.set({
-      phone,
-      status: "waiting_for_manual_otp",
-      requestedAt: new Date(),
-      verified: false
-    }, { merge: true });
-
-    return res.json({
-      message: "Verification requested. Please contact the administrator for your manual OTP.",
-      status: "waiting_for_manual_otp"
-    });
-
-  } catch (err) {
-    console.error("Manual OTP request failed:", err.message);
-
-    return res.status(500).json({
-      error: err.message
-    });
-  }
+return res.json({
+  message: "OTP request accepted. Enter the fixed manual OTP.",
+  status: "otp_ready",
+  phone
 });
 
+} catch (err) {
+console.error("OTP request failed:", err.message);
+
+return res.status(500).json({
+  error: err.message
+});
+
+}
+});
 
 app.post("/auth/verify-otp", async (req, res) => {
-  try {
-    const phone = String(req.body.phone || "").trim();
-    const otp = String(req.body.otp || "").trim();
+try {
+const phone = normalizeEthiopianPhone(req.body.phone);
+const otp = String(req.body.otp || "").trim();
 
-    if (!/^\+2519\d{8}$/.test(phone)) {
-      return res.status(400).json({
-        error: "Invalid Ethiopian phone number"
-      });
-    }
+if (!phone) {
+  return res.status(400).json({
+    error: "Invalid Ethiopian phone number"
+  });
+}
 
-    if (!/^\d{6}$/.test(otp)) {
-      return res.status(400).json({
-        error: "OTP must be exactly 6 digits"
-      });
-    }
+if (!/^\d{6}$/.test(otp)) {
+  return res.status(400).json({
+    error: "OTP must be exactly 6 digits"
+  });
+}
 
-    const otpRef = db.collection("manualOtpRequests").doc(phone.replace("+", ""));
-    const otpDoc = await otpRef.get();
+if (!MANUAL_OTP) {
+  return res.status(500).json({
+    error: "MANUAL_OTP is not configured on the server"
+  });
+}
 
-    if (!otpDoc.exists) {
-      return res.status(400).json({
-        error: "No OTP request found for this phone number"
-      });
-    }
+if (otp !== MANUAL_OTP) {
+  return res.status(401).json({
+    error: "Invalid OTP. Use 123456."
+  });
+}
 
-    const otpData = otpDoc.data() || {};
+const customerRef = db
+  .collection("customers")
+  .doc(phone.replace("+", ""));
 
-    if (otpData.status !== "waiting_for_manual_otp") {
-      return res.status(400).json({
-        error: "OTP request is not active"
-      });
-    }
+const customerDoc = await customerRef.get();
 
-    if (String(otpData.otp || "") !== otp) {
-      return res.status(401).json({
-        error: "Incorrect manual OTP"
-      });
-    }
+let customer;
 
-    const customerRef = db.collection("customers").doc(phone.replace("+", ""));
-    const customerDoc = await customerRef.get();
+if (customerDoc.exists) {
+  customer = {
+    id: customerDoc.id,
+    ...customerDoc.data()
+  };
+} else {
+  customer = {
+    id: customerRef.id,
+    phone,
+    name: "",
+    createdAt: new Date()
+  };
 
-    let customer;
+  await customerRef.set(customer);
+}
 
-    if (customerDoc.exists) {
-      customer = {
-        id: customerDoc.id,
-        ...customerDoc.data()
-      };
-    } else {
-      customer = {
-        id: customerRef.id,
-        phone,
-        name: "",
-        createdAt: new Date()
-      };
+const token = createCustomerToken(customer);
 
-      await customerRef.set(customer);
-    }
-
-    await otpRef.update({
-      status: "used",
-      verified: true,
-      verifiedAt: new Date(),
-      otp: null
-    });
-
-    const token = createCustomerToken(customer);
-
-    return res.json({
-      message: "Manual OTP verified successfully",
-      token,
-      userId: customer.id,
-      phone
-    });
-
-  } catch (err) {
-    console.error("Manual OTP verification failed:", err.message);
-
-    return res.status(500).json({
-      error: err.message
-    });
-  }
+return res.json({
+  message: "Customer login successful",
+  token,
+  userId: customer.id,
+  phone
 });
 
+} catch (err) {
+console.error("Customer OTP verification failed:", err.message);
 
-/*
- * ADMIN-ONLY MANUAL OTP SETTER
- *
- * This does NOT send anything to the customer.
- * The administrator manually chooses the 6-digit OTP
- * and stores it for the requested phone number.
- */
-app.put("/auth/admin/set-manual-otp", requireAdmin, async (req, res) => {
-  try {
-    const phone = String(req.body.phone || "").trim();
-    const otp = String(req.body.otp || "").trim();
-
-    if (!/^\+2519\d{8}$/.test(phone)) {
-      return res.status(400).json({
-        error: "Invalid Ethiopian phone number"
-      });
-    }
-
-    if (!/^\d{6}$/.test(otp)) {
-      return res.status(400).json({
-        error: "OTP must be exactly 6 digits"
-      });
-    }
-
-    const ref = db.collection("manualOtpRequests").doc(phone.replace("+", ""));
-
-    await ref.set({
-      phone,
-      otp,
-      status: "waiting_for_manual_otp",
-      otpSetAt: new Date(),
-      otpSetBy: req.user.uid
-    }, { merge: true });
-
-    return res.json({
-      message: "Manual OTP saved successfully",
-      phone,
-      status: "waiting_for_manual_otp"
-    });
-
-  } catch (err) {
-    console.error("Manual OTP setup failed:", err.message);
-
-    return res.status(500).json({
-      error: err.message
-    });
-  }
+return res.status(500).json({
+  error: err.message
 });
 
-
+}
+});
 /* =========================
    USER AUTHENTICATION
 ========================= */
