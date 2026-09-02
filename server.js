@@ -94,146 +94,89 @@ async function requireAdmin(req, res, next) {
 * FIXED MANUAL CUSTOMER OTP
 * 
 * No SMS is sent.
-* Customers use the fixed OTP configured in MANUAL_OTP.
-  */
 
-const MANUAL_OTP = process.env.MANUAL_OTP;
-
-app.get("/debug/env", (req, res) => {
-  res.json({
-    manualOtpConfigured: Boolean(process.env.MANUAL_OTP),
-    firebaseConfigured: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
-  });
-});
-
-if (!MANUAL_OTP) {
-console.warn(
-"WARNING: MANUAL_OTP is not configured. Customer login will not work."
-);
-}
+/*
+ * CUSTOMER PHONE-ONLY LOGIN
+ *
+ * No SMS and no OTP.
+ * Customer enters an Ethiopian phone number and receives a customer session.
+ */
 
 function normalizeEthiopianPhone(phone) {
-phone = String(phone || "").trim();
+  phone = String(phone || "").trim();
 
-// 0912345678 -> +251912345678
-if (/^09\d{8}$/.test(phone)) {
-return "+251" + phone.substring(1);
+  // 0912345678 -> +251912345678
+  if (/^09\d{8}$/.test(phone)) {
+    return "+251" + phone.substring(1);
+  }
+
+  // 251912345678 -> +251912345678
+  if (/^2519\d{8}$/.test(phone)) {
+    return "+" + phone;
+  }
+
+  // Already correct: +251912345678
+  if (/^\+2519\d{8}$/.test(phone)) {
+    return phone;
+  }
+
+  return null;
 }
 
-// 251912345678 -> +251912345678
-if (/^2519\d{8}$/.test(phone)) {
-return "+" + phone;
-}
+app.post("/auth/customer-login", async (req, res) => {
+  try {
+    const phone = normalizeEthiopianPhone(req.body.phone);
 
-// Already correct: +251912345678
-if (/^\+2519\d{8}$/.test(phone)) {
-return phone;
-}
+    if (!phone) {
+      return res.status(400).json({
+        error: "Invalid Ethiopian phone number"
+      });
+    }
 
-return null;
-}
+    const customerRef = db
+      .collection("customers")
+      .doc(phone.replace("+", ""));
 
-app.post("/auth/request-otp", async (req, res) => {
-try {
-const phone = normalizeEthiopianPhone(req.body.phone);
+    const customerDoc = await customerRef.get();
 
-if (!phone) {
-  return res.status(400).json({
-    error: "Invalid Ethiopian phone number"
-  });
-}
+    let customer;
 
-return res.json({
-  message: "OTP request accepted. Enter the fixed manual OTP.",
-  status: "otp_ready",
-  phone
+    if (customerDoc.exists) {
+      customer = {
+        id: customerDoc.id,
+        ...customerDoc.data()
+      };
+    } else {
+      customer = {
+        id: customerRef.id,
+        phone,
+        name: "",
+        createdAt: new Date()
+      };
+
+      await customerRef.set(customer);
+    }
+
+    const token = createCustomerToken(customer);
+
+    return res.json({
+      message: "Customer login successful",
+      token,
+      userId: customer.id,
+      phone
+    });
+  } catch (err) {
+    console.error("Customer phone login failed:", err.message);
+
+    return res.status(500).json({
+      error: err.message
+    });
+  }
 });
 
-} catch (err) {
-console.error("OTP request failed:", err.message);
-
-return res.status(500).json({
-  error: err.message
-});
-
-}
-});
-
-app.post("/auth/verify-otp", async (req, res) => {
-try {
-const phone = normalizeEthiopianPhone(req.body.phone);
-const otp = String(req.body.otp || "").trim();
-
-if (!phone) {
-  return res.status(400).json({
-    error: "Invalid Ethiopian phone number"
-  });
-}
-
-if (!/^\d{6}$/.test(otp)) {
-  return res.status(400).json({
-    error: "OTP must be exactly 6 digits"
-  });
-}
-
-if (!MANUAL_OTP) {
-  return res.status(500).json({
-    error: "MANUAL_OTP is not configured on the server"
-  });
-}
-
-if (otp !== MANUAL_OTP) {
-  return res.status(401).json({
-    error: "Invalid OTP. Use 123456."
-  });
-}
-
-const customerRef = db
-  .collection("customers")
-  .doc(phone.replace("+", ""));
-
-const customerDoc = await customerRef.get();
-
-let customer;
-
-if (customerDoc.exists) {
-  customer = {
-    id: customerDoc.id,
-    ...customerDoc.data()
-  };
-} else {
-  customer = {
-    id: customerRef.id,
-    phone,
-    name: "",
-    createdAt: new Date()
-  };
-
-  await customerRef.set(customer);
-}
-
-const token = createCustomerToken(customer);
-
-return res.json({
-  message: "Customer login successful",
-  token,
-  userId: customer.id,
-  phone
-});
-
-} catch (err) {
-console.error("Customer OTP verification failed:", err.message);
-
-return res.status(500).json({
-  error: err.message
-});
-
-}
-});
 /* =========================
-   USER AUTHENTICATION
-========================= */
-
+ * USER AUTHENTICATION
+ ========================= */
 async function requireUser(req, res, next) {
   try {
     const authHeader = req.headers.authorization || "";
