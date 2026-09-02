@@ -99,6 +99,13 @@ async function requireAdmin(req, res, next) {
 
 const MANUAL_OTP = process.env.MANUAL_OTP;
 
+app.get("/debug/env", (req, res) => {
+  res.json({
+    manualOtpConfigured: Boolean(process.env.MANUAL_OTP),
+    firebaseConfigured: Boolean(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
+  });
+});
+
 if (!MANUAL_OTP) {
 console.warn(
 "WARNING: MANUAL_OTP is not configured. Customer login will not work."
