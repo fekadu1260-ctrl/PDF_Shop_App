@@ -20,6 +20,16 @@ function createCustomerToken(customer) {
   );
 }
 
+function verifyCustomerToken(token) {
+  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+  return {
+    ...decoded,
+    uid: String(decoded.userId || decoded.uid || ""),
+    customer: decoded.role === "customer"
+  };
+}
+
 
 const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
   ? JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_JSON)
