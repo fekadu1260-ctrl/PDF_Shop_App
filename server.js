@@ -420,6 +420,97 @@ app.post("/pdfs", requireAdmin, async (req, res) => {
 });
 
 /* =========================
+   ADMIN PDF EDIT
+========================= */
+
+app.put("/pdfs/:id", requireAdmin, async (req, res) => {
+  try {
+    const {
+      title,
+      description,
+      price,
+      category,
+      fileUrl
+    } = req.body;
+
+    if (!title || !fileUrl) {
+      return res.status(400).json({
+        error: "Title and fileUrl are required"
+      });
+    }
+
+    const numericPrice = Number(price);
+
+    if (!Number.isFinite(numericPrice) || numericPrice < 0) {
+      return res.status(400).json({
+        error: "Invalid price"
+      });
+    }
+
+    const pdfRef = db.collection("pdfs").doc(req.params.id);
+    const existing = await pdfRef.get();
+
+    if (!existing.exists) {
+      return res.status(404).json({
+        error: "PDF not found"
+      });
+    }
+
+    await pdfRef.update({
+      title: String(title).trim(),
+      description: String(description || "").trim(),
+      price: numericPrice,
+      category: String(category || "General").trim(),
+      fileUrl: String(fileUrl).trim(),
+      updatedAt: new Date()
+    });
+
+    res.json({
+      message: "PDF updated",
+      id: req.params.id
+    });
+  } catch (err) {
+    console.error("PDF update failed:", err.message);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
+/* =========================
+   ADMIN PDF DELETE
+========================= */
+
+app.delete("/pdfs/:id", requireAdmin, async (req, res) => {
+  try {
+    const pdfRef = db.collection("pdfs").doc(req.params.id);
+    const existing = await pdfRef.get();
+
+    if (!existing.exists) {
+      return res.status(404).json({
+        error: "PDF not found"
+      });
+    }
+
+    await pdfRef.delete();
+
+    res.json({
+      message: "PDF deleted",
+      id: req.params.id
+    });
+  } catch (err) {
+    console.error("PDF deletion failed:", err.message);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
+/* =========================
    ORDERS
 ========================= */
 
