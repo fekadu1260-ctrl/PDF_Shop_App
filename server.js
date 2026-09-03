@@ -4,7 +4,7 @@ const multer = require("multer");
 const path = require("path");
 const fs = require("fs");
 const { initializeApp, cert } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
 const { getStorage } = require("firebase-admin/storage");
 const jwt = require("jsonwebtoken");
@@ -237,6 +237,89 @@ app.get("/", (req, res) => {
 
 
 /* =========================
+   CUSTOMER FAVORITES
+========================= */
+
+app.get("/favorites", requireUser, async (req, res) => {
+  try {
+    const snapshot = await db
+      .collection("customers")
+      .doc(req.user.uid)
+      .collection("favorites")
+      .get();
+
+    const favorites = snapshot.docs.map(doc => doc.id);
+
+    res.json({
+      favorites
+    });
+  } catch (err) {
+    console.error("Get favorites failed:", err.message);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+app.post("/favorites/:pdfId", requireUser, async (req, res) => {
+  try {
+    const pdfRef = db.collection("pdfs").doc(req.params.pdfId);
+    const pdfDoc = await pdfRef.get();
+
+    if (!pdfDoc.exists) {
+      return res.status(404).json({
+        error: "PDF not found"
+      });
+    }
+
+    const favoriteRef = db
+      .collection("customers")
+      .doc(req.user.uid)
+      .collection("favorites")
+      .doc(req.params.pdfId);
+
+    await favoriteRef.set({
+      pdfId: req.params.pdfId,
+      createdAt: FieldValue.serverTimestamp()
+    });
+
+    res.json({
+      favorite: true,
+      pdfId: req.params.pdfId
+    });
+  } catch (err) {
+    console.error("Add favorite failed:", err.message);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+app.delete("/favorites/:pdfId", requireUser, async (req, res) => {
+  try {
+    await db
+      .collection("customers")
+      .doc(req.user.uid)
+      .collection("favorites")
+      .doc(req.params.pdfId)
+      .delete();
+
+    res.json({
+      favorite: false,
+      pdfId: req.params.pdfId
+    });
+  } catch (err) {
+    console.error("Remove favorite failed:", err.message);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+/* =========================
    PDF FILE UPLOAD
 ========================= */
 
@@ -398,6 +481,8 @@ app.post("/pdfs", requireAdmin, async (req, res) => {
       price: numericPrice,
       category: String(category || "General").trim(),
       fileUrl: String(fileUrl).trim(),
+      isOnline: req.body.isOnline !== false,
+      views: 0,
       createdAt: new Date()
     });
 
@@ -462,6 +547,7 @@ app.put("/pdfs/:id", requireAdmin, async (req, res) => {
       price: numericPrice,
       category: String(category || "General").trim(),
       fileUrl: String(fileUrl).trim(),
+      isOnline: req.body.isOnline !== false,
       updatedAt: new Date()
     });
 
@@ -502,6 +588,42 @@ app.delete("/pdfs/:id", requireAdmin, async (req, res) => {
     });
   } catch (err) {
     console.error("PDF deletion failed:", err.message);
+
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
+
+
+/* =========================
+   PDF VIEW COUNT
+========================= */
+
+app.post("/pdfs/:id/view", async (req, res) => {
+  try {
+    const pdfRef = db.collection("pdfs").doc(req.params.id);
+    const existing = await pdfRef.get();
+
+    if (!existing.exists) {
+      return res.status(404).json({
+        error: "PDF not found"
+      });
+    }
+
+    await pdfRef.update({
+      views: FieldValue.increment(1)
+    });
+
+    const updated = await pdfRef.get();
+
+    res.json({
+      id: req.params.id,
+      views: Number(updated.data()?.views || 0)
+    });
+  } catch (err) {
+    console.error("PDF view count failed:", err.message);
 
     res.status(500).json({
       error: err.message
