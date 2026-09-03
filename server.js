@@ -663,6 +663,34 @@ async function requirePaymentOwnerOrAdmin(req, res, next) {
   }
 }
 
+
+app.get("/payments/mine", requireUser, async (req, res) => {
+  try {
+    const snapshot = await db
+      .collection("payments")
+      .where("userId", "==", req.user.uid)
+      .get();
+
+    const payments = snapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .sort((a, b) => {
+        const ta = a.createdAt?._seconds || 0;
+        const tb = b.createdAt?._seconds || 0;
+        return tb - ta;
+      });
+
+    res.json(payments);
+  } catch (err) {
+    console.error("Customer payment loading failed:", err.message);
+    res.status(500).json({
+      error: err.message
+    });
+  }
+});
+
 app.get("/payments/:id", requirePaymentOwnerOrAdmin, async (req, res) => {
   try {
     const doc = await db.collection("payments").doc(req.params.id).get();
