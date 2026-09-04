@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 
 import 'admin.dart';
 import '../services/app_language.dart';
+import '../services/auth_service.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -13,55 +14,57 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  final AuthService _authService = AuthService();
 
+  String? _customerPhone;
   bool _loading = true;
   bool _isAdmin = false;
 
   @override
   void initState() {
     super.initState();
-    _checkAdmin();
+    _loadProfile();
   }
 
-  Future<void> _checkAdmin() async {
-    final user = _auth.currentUser;
+  Future<void> _loadProfile() async {
+    final adminUser = _auth.currentUser;
 
-    if (user == null) {
-      if (!mounted) return;
+    if (adminUser != null) {
+      try {
+        final tokenResult = await adminUser.getIdTokenResult(true);
+        final claims = tokenResult.claims;
 
-      setState(() {
-        _loading = false;
-        _isAdmin = false;
-      });
+        if (!mounted) return;
+
+        setState(() {
+          _isAdmin = claims?['admin'] == true;
+          _loading = false;
+        });
+      } catch (_) {
+        if (!mounted) return;
+
+        setState(() {
+          _isAdmin = false;
+          _loading = false;
+        });
+      }
 
       return;
     }
 
-    try {
-      // Force-refresh the Firebase ID token so the latest
-      // custom claims (admin: true) are available.
-      final tokenResult = await user.getIdTokenResult(true);
+    final phone = await _authService.getCustomerPhone();
 
-      final claims = tokenResult.claims;
+    if (!mounted) return;
 
-      if (!mounted) return;
-
-      setState(() {
-        _isAdmin = claims?['admin'] == true;
-        _loading = false;
-      });
-    } catch (_) {
-      if (!mounted) return;
-
-      setState(() {
-        _loading = false;
-        _isAdmin = false;
-      });
-    }
+    setState(() {
+      _customerPhone = phone;
+      _isAdmin = false;
+      _loading = false;
+    });
   }
 
   Future<void> _logout() async {
-    await _auth.signOut();
+    await _authService.logout();
 
     if (!mounted) return;
 
@@ -87,7 +90,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
       onTap: () {
         LanguageService.setLanguage(language);
-        Navigator.pop(context);
+        Navigator.of(context).popUntil((route) => route.isFirst);
       },
     );
   }
@@ -118,7 +121,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             child: ListTile(
               leading: const Icon(Icons.phone),
               title: const Text("Phone Number"),
-              subtitle: Text(user?.phoneNumber ?? "No phone number"),
+              subtitle: Text(_customerPhone ?? user?.phoneNumber ?? "No phone number"),
             ),
           ),
 

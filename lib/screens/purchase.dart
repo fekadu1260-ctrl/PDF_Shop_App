@@ -1,8 +1,8 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../models/pdf_model.dart';
 import '../services/payment_service.dart';
+import '../services/auth_service.dart';
 import 'payment_waiting_screen.dart';
 
 class PurchasePage extends StatefulWidget {
@@ -49,9 +49,10 @@ class _PurchasePageState extends State<PurchasePage> {
       return;
     }
 
-    final user = FirebaseAuth.instance.currentUser;
+    final authService = AuthService();
+    final userId = await authService.getCustomerUserId();
 
-    if (user == null) {
+    if (userId == null || userId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Please sign in before making a payment.'),
@@ -64,7 +65,7 @@ class _PurchasePageState extends State<PurchasePage> {
 
     try {
       final payment = await paymentService.createPayment(
-        userId: user.uid,
+        userId: userId,
         pdfId: widget.pdf.id,
         amount: widget.pdf.price,
         method: method,

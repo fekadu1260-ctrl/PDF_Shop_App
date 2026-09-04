@@ -1,8 +1,9 @@
 import 'dart:convert';
-import 'package:firebase_auth/firebase_auth.dart';
+
 import 'package:http/http.dart' as http;
 
 import 'api_config.dart';
+import 'auth_service.dart';
 import 'offline_order_service.dart';
 
 class OrderSyncService {
@@ -14,29 +15,10 @@ class OrderSyncService {
   final OfflineOrderService _offlineService =
       OfflineOrderService.instance;
 
-  Future<String> _getAuthToken() async {
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      throw Exception('User is not authenticated');
-    }
-
-    final token = await user.getIdToken();
-
-    if (token == null || token.isEmpty) {
-      throw Exception('Unable to obtain Firebase authentication token');
-    }
-
-    return token;
-  }
+  final AuthService _authService = AuthService();
 
   Future<Map<String, String>> _authHeaders() async {
-    final token = await _getAuthToken();
-
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    return _authService.customerAuthHeaders();
   }
 
   Future<int> syncWaitingOrders() async {
@@ -69,7 +51,7 @@ class OrderSyncService {
           syncedCount++;
         }
       } catch (_) {
-        // Internet unavailable or authentication unavailable.
+        // Internet unavailable or customer authentication unavailable.
         // Leave the order waiting for the next sync attempt.
       }
     }

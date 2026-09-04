@@ -77,6 +77,30 @@ const pdfUpload = multer({
 
 
 /* =========================
+   ADMIN CONTROL PASSWORD
+========================= */
+
+const ADMIN_CONTROL_PASSWORD = process.env.ADMIN_CONTROL_PASSWORD;
+
+async function requireAdminControl(req, res, next) {
+  const password = req.headers["x-admin-control-password"];
+
+  if (!ADMIN_CONTROL_PASSWORD) {
+    return res.status(500).json({
+      error: "Admin control password is not configured."
+    });
+  }
+
+  if (password !== ADMIN_CONTROL_PASSWORD) {
+    return res.status(403).json({
+      error: "Invalid admin control password."
+    });
+  }
+
+  next();
+}
+
+/* =========================
    ADMIN AUTHENTICATION
 ========================= */
 
@@ -209,7 +233,8 @@ async function requireUser(req, res, next) {
       });
     }
 
-    const token = authHeader.substring(7);
+    const token = authHeader.substring(7).trim();
+
     const decodedToken = verifyCustomerToken(token);
 
     if (decodedToken.customer !== true || !decodedToken.uid) {
@@ -219,7 +244,7 @@ async function requireUser(req, res, next) {
     }
 
     req.user = decodedToken;
-    next();
+    return next();
 
   } catch (err) {
     console.error("Customer authentication failed:", err.message);
@@ -229,7 +254,22 @@ async function requireUser(req, res, next) {
     });
   }
 }
+
 console.log("SERVER FILE LOADED");
+
+// Public app update information.
+app.get("/app-version", (req, res) => {
+  res.json({
+    version: process.env.APP_LATEST_VERSION || "1.0.0",
+    buildNumber: Number(process.env.APP_LATEST_BUILD || 1),
+    apkUrl: process.env.APP_UPDATE_URL || "",
+    message:
+      process.env.APP_UPDATE_MESSAGE ||
+      "A new version is available.",
+    forceUpdate:
+      String(process.env.APP_FORCE_UPDATE || "false").toLowerCase() === "true"
+  });
+});
 
 app.get("/", (req, res) => {
   res.send("PDF Shop API Running");
@@ -456,6 +496,7 @@ app.post("/pdfs", requireAdmin, async (req, res) => {
     const {
       title,
       description,
+      writer,
       price,
       category,
       fileUrl
@@ -478,6 +519,7 @@ app.post("/pdfs", requireAdmin, async (req, res) => {
     const docRef = await db.collection("pdfs").add({
       title: String(title).trim(),
       description: String(description || "").trim(),
+      writer: String(writer || "").trim(),
       price: numericPrice,
       category: String(category || "General").trim(),
       fileUrl: String(fileUrl).trim(),

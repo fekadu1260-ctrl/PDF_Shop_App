@@ -1,39 +1,20 @@
 import 'dart:convert';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/order_model.dart';
 import 'api_config.dart';
+import 'auth_service.dart';
 import 'offline_order_service.dart';
 
 class OrderService {
   final OfflineOrderService _offlineService =
       OfflineOrderService.instance;
 
-  Future<String> _getAuthToken() async {
-    final user = FirebaseAuth.instance.currentUser;
-
-    if (user == null) {
-      throw Exception('User is not signed in.');
-    }
-
-    final token = await user.getIdToken();
-
-    if (token == null || token.isEmpty) {
-      throw Exception('Could not obtain Firebase authentication token.');
-    }
-
-    return token;
-  }
+  final AuthService _authService = AuthService();
 
   Future<Map<String, String>> _authHeaders() async {
-    final token = await _getAuthToken();
-
-    return {
-      'Content-Type': 'application/json',
-      'Authorization': 'Bearer $token',
-    };
+    return _authService.customerAuthHeaders();
   }
 
   Future<OrderModel> createOrder({

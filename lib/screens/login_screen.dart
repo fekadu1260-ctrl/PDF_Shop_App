@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 import '../services/auth_service.dart';
@@ -13,14 +12,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final phoneController = TextEditingController();
-  final otpController = TextEditingController();
-
   final AuthService authService = AuthService();
 
-  String? verificationId;
-  int? resendToken;
-
-  bool otpSent = false;
   bool loading = false;
 
   String _normalizePhone(String value) {
@@ -28,12 +21,11 @@ class _LoginScreenState extends State<LoginScreen> {
 
     // Ethiopian local format:
     // 0912345678 -> +251912345678
-    // 0912...    -> +251912...
     if (phone.startsWith('09') && phone.length == 10) {
       phone = '+251${phone.substring(1)}';
     }
 
-    // Ethiopian local format without the leading 0:
+    // Ethiopian format without leading zero:
     // 912345678 -> +251912345678
     else if (RegExp(r'^9\d{8}$').hasMatch(phone)) {
       phone = '+251$phone';
@@ -48,14 +40,14 @@ class _LoginScreenState extends State<LoginScreen> {
     return phone;
   }
 
-  Future<void> sendOtp() async {
+  Future<void> login() async {
     final phone = _normalizePhone(phoneController.text);
 
-    if (!phone.startsWith('+') || phone.length < 8) {
+    if (!RegExp(r'^\+2519\d{8}$').hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text(
-            'Enter a valid international phone number, for example +251912345678.',
+            'Enter a valid Ethiopian phone number, for example 0912345678.',
           ),
         ),
       );
@@ -67,111 +59,9 @@ class _LoginScreenState extends State<LoginScreen> {
     });
 
     try {
-      await authService.sendOtp(
+      await authService.signInCustomer(
         phoneNumber: phone,
-
-        onCodeSent: (id, token) {
-          if (!mounted) return;
-
-          setState(() {
-            verificationId = id;
-            resendToken = token;
-            otpSent = true;
-            loading = false;
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text(
-                'OTP sent successfully. Check your SMS.',
-              ),
-            ),
-          );
-        },
-
-        onVerificationCompleted: (credential) {
-          // Manual OTP verification is required.
-          // Do NOT automatically sign the customer in here.
-          // The customer must enter the SMS OTP and press Verify OTP.
-          if (!mounted) return;
-
-          setState(() {
-            loading = false;
-          });
-        },
-
-        onVerificationFailed: (error) {
-          if (!mounted) return;
-
-          setState(() {
-            loading = false;
-          });
-
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Phone verification failed: '
-                '${error.message ?? error.code}',
-              ),
-            ),
-          );
-        },
-
-        onCodeAutoRetrievalTimeout: (id) {
-          verificationId = id;
-        },
-
-        forceResendingToken: resendToken,
       );
-    } catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        loading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'Could not send OTP: $e',
-          ),
-        ),
-      );
-    }
-  }
-
-  Future<void> verifyOtp() async {
-    final id = verificationId;
-    final code = otpController.text.trim();
-
-    if (id == null || id.isEmpty) {
-      return;
-    }
-
-    if (code.length != 6) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Enter the 6-digit OTP.'),
-        ),
-      );
-      return;
-    }
-
-    setState(() {
-      loading = true;
-    });
-
-    try {
-      final user = await authService.verifyOtp(
-        verificationId: id,
-        smsCode: code,
-      );
-
-      if (user == null) {
-        throw Exception(
-          'Firebase did not return a user.',
-        );
-      }
 
       if (!mounted) return;
 
@@ -187,42 +77,28 @@ class _LoginScreenState extends State<LoginScreen> {
           builder: (_) => const MainNavigationScreen(),
         ),
       );
-    } on FirebaseAuthException catch (e) {
-      if (!mounted) return;
-
-      setState(() {
-        loading = false;
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            'OTP verification failed: '
-            '${e.message ?? e.code}',
-          ),
-        ),
-      );
     } catch (e) {
       if (!mounted) return;
 
-      setState(() {
-        loading = false;
-      });
-
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'OTP verification failed: $e',
+            'Login failed: $e',
           ),
         ),
       );
+    } finally {
+      if (mounted) {
+        setState(() {
+          loading = false;
+        });
+      }
     }
   }
 
   @override
   void dispose() {
     phoneController.dispose();
-    otpController.dispose();
     super.dispose();
   }
 
@@ -256,8 +132,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 8),
 
             const Text(
-              'Login with your phone number. '
-              'No email account required.',
+              'Enter your phone number to continue.',
               textAlign: TextAlign.center,
             ),
 
@@ -266,114 +141,55 @@ class _LoginScreenState extends State<LoginScreen> {
             TextField(
               controller: phoneController,
               keyboardType: TextInputType.phone,
-              enabled: !otpSent && !loading,
+              enabled: !loading,
               decoration: const InputDecoration(
                 labelText: 'Phone Number',
-                hintText: '+251912345678',
+                hintText: '0912345678',
                 prefixIcon: Icon(Icons.phone),
                 border: OutlineInputBorder(),
               ),
             ),
 
-            const SizedBox(height: 15),
-
-            if (!otpSent)
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: loading ? null : sendOtp,
-                  icon: loading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(Icons.sms),
-                  label: Text(
-                    loading
-                        ? 'Sending OTP...'
-                        : 'Send OTP',
-                  ),
-                ),
-              ),
+            const SizedBox(height: 18),
 
             SizedBox(
-  width: double.infinity,
-  child: OutlinedButton.icon(
-    onPressed: loading
-        ? null
-        : () {
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const MainNavigationScreen(),
-              ),
-            );
-          },
-    icon: const Icon(Icons.store),
-    label: const Text('Continue to Shop'),
-  ),
-),
-
-const SizedBox(height: 12),
-
-if (otpSent) ...[
-              const SizedBox(height: 10),
-
-              TextField(
-                controller: otpController,
-                keyboardType: TextInputType.number,
-                maxLength: 6,
-                decoration: const InputDecoration(
-                  labelText: 'Enter OTP',
-                  hintText: '123456',
-                  prefixIcon: Icon(Icons.lock),
-                  border: OutlineInputBorder(),
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: loading ? null : login,
+                icon: loading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Icon(Icons.login),
+                label: Text(
+                  loading ? 'Logging in...' : 'Login',
                 ),
               ),
+            ),
 
-              const SizedBox(height: 5),
+            const SizedBox(height: 12),
 
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton.icon(
-                  onPressed: loading ? null : verifyOtp,
-                  icon: loading
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                          ),
-                        )
-                      : const Icon(Icons.verified),
-                  label: Text(
-                    loading
-                        ? 'Verifying...'
-                        : 'Verify OTP',
-                  ),
-                ),
-              ),
-
-              const SizedBox(height: 10),
-
-              TextButton(
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
                 onPressed: loading
                     ? null
                     : () {
-                        setState(() {
-                          otpSent = false;
-                          verificationId = null;
-                          otpController.clear();
-                        });
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const MainNavigationScreen(),
+                          ),
+                        );
                       },
-                child: const Text(
-                  'Change phone number',
-                ),
+                icon: const Icon(Icons.store),
+                label: const Text('Continue to Shop'),
               ),
-            ],
+            ),
           ],
         ),
       ),
