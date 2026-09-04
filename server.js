@@ -1058,6 +1058,153 @@ app.put("/payments/:id/approve", requireAdmin, async (req, res) => {
 });
 
 /* =========================
+   ADMIN APP SETTINGS
+========================= */
+
+const DEFAULT_APP_SETTINGS = {
+  storeName: "GREAT STORE",
+  storeOpen: true,
+  maintenanceMode: false,
+  purchasesEnabled: true,
+  customerAccessEnabled: true,
+  offlineSalesEnabled: true,
+
+  defaultLanguage: "english",
+  enabledLanguages: [
+    "english",
+    "amharic",
+    "tigrinya",
+    "oromo"
+  ],
+
+  announcementEnabled: false,
+  announcement: "",
+
+  telebirrNumber: "+251 955 203 639",
+  cbeAccount: "1000557731591",
+  paymentInstructions: "",
+
+  appLatestVersion: "1.0.0",
+  appLatestBuild: 1,
+  appUpdateUrl: "",
+  appUpdateMessage: "A new version is available.",
+  forceUpdate: false
+};
+
+app.get(
+  "/admin/settings",
+  requireAdmin,
+  requireAdminControl,
+  async (req, res) => {
+    try {
+      const ref = db.collection("app_settings").doc("main");
+      const snapshot = await ref.get();
+
+      if (!snapshot.exists) {
+        await ref.set({
+          ...DEFAULT_APP_SETTINGS,
+          updatedAt: new Date()
+        });
+
+        return res.json({
+          ...DEFAULT_APP_SETTINGS
+        });
+      }
+
+      const settings = snapshot.data() || {};
+
+      res.json({
+        ...DEFAULT_APP_SETTINGS,
+        ...settings
+      });
+    } catch (err) {
+      console.error("Failed to load admin settings:", err.message);
+
+      res.status(500).json({
+        error: "Failed to load app settings"
+      });
+    }
+  }
+);
+
+app.put(
+  "/admin/settings",
+  requireAdmin,
+  requireAdminControl,
+  async (req, res) => {
+    try {
+      const body = req.body || {};
+
+      const updateData = {
+        storeName: String(
+          body.storeName ?? DEFAULT_APP_SETTINGS.storeName
+        ).trim(),
+
+        storeOpen: Boolean(body.storeOpen),
+        maintenanceMode: Boolean(body.maintenanceMode),
+        purchasesEnabled: Boolean(body.purchasesEnabled),
+        customerAccessEnabled: Boolean(body.customerAccessEnabled),
+        offlineSalesEnabled: Boolean(body.offlineSalesEnabled),
+
+        defaultLanguage: String(
+          body.defaultLanguage ?? DEFAULT_APP_SETTINGS.defaultLanguage
+        ).trim(),
+
+        enabledLanguages: Array.isArray(body.enabledLanguages)
+          ? body.enabledLanguages.map((value) => String(value))
+          : DEFAULT_APP_SETTINGS.enabledLanguages,
+
+        announcementEnabled: Boolean(body.announcementEnabled),
+        announcement: String(body.announcement ?? "").trim(),
+
+        telebirrNumber: String(body.telebirrNumber ?? "").trim(),
+        cbeAccount: String(body.cbeAccount ?? "").trim(),
+
+        paymentInstructions: String(
+          body.paymentInstructions ?? ""
+        ).trim(),
+
+        appLatestVersion: String(
+          body.appLatestVersion ??
+              DEFAULT_APP_SETTINGS.appLatestVersion
+        ).trim(),
+
+        appLatestBuild: Number.isFinite(Number(body.appLatestBuild))
+          ? Number(body.appLatestBuild)
+          : DEFAULT_APP_SETTINGS.appLatestBuild,
+
+        appUpdateUrl: String(body.appUpdateUrl ?? "").trim(),
+
+        appUpdateMessage: String(
+          body.appUpdateMessage ??
+              DEFAULT_APP_SETTINGS.appUpdateMessage
+        ).trim(),
+
+        forceUpdate: Boolean(body.forceUpdate),
+
+        updatedAt: new Date()
+      };
+
+      await db
+        .collection("app_settings")
+        .doc("main")
+        .set(updateData, { merge: true });
+
+      res.json({
+        message: "App settings updated successfully",
+        ...updateData
+      });
+    } catch (err) {
+      console.error("Failed to update admin settings:", err.message);
+
+      res.status(500).json({
+        error: "Failed to update app settings"
+      });
+    }
+  }
+);
+
+/* =========================
    SERVER
 ========================= */
 
