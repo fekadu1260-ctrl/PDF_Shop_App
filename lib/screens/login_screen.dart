@@ -126,14 +126,11 @@ class _LoginScreenState extends State<LoginScreen> {
         child: Column(
           children: [
             const SizedBox(height: 20),
-
             const Icon(
               Icons.phone_android,
               size: 90,
             ),
-
             const SizedBox(height: 20),
-
             const Text(
               'Customer Login',
               style: TextStyle(
@@ -141,16 +138,12 @@ class _LoginScreenState extends State<LoginScreen> {
                 fontWeight: FontWeight.bold,
               ),
             ),
-
             const SizedBox(height: 8),
-
             const Text(
               'Enter your phone number and access code to continue.',
               textAlign: TextAlign.center,
             ),
-
             const SizedBox(height: 30),
-
             TextField(
               controller: phoneController,
               keyboardType: TextInputType.phone,
@@ -162,9 +155,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 border: OutlineInputBorder(),
               ),
             ),
-
             const SizedBox(height: 18),
-
             TextField(
               controller: accessCodeController,
               keyboardType: TextInputType.number,
@@ -179,9 +170,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 counterText: '',
               ),
             ),
-
             const SizedBox(height: 18),
-
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
@@ -200,8 +189,6 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
             ),
-
-
           ],
         ),
       ),

@@ -33,9 +33,8 @@ class AuthService {
     final data = jsonDecode(response.body);
 
     if (response.statusCode != 200) {
-      final error = data is Map<String, dynamic>
-          ? data['error']?.toString()
-          : null;
+      final error =
+          data is Map<String, dynamic> ? data['error']?.toString() : null;
 
       throw Exception(
         error ?? 'Customer login failed (${response.statusCode})',
