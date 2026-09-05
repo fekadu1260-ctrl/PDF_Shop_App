@@ -172,10 +172,17 @@ function normalizeEthiopianPhone(phone) {
 app.post("/auth/customer-login", async (req, res) => {
   try {
     const phone = normalizeEthiopianPhone(req.body.phone);
+    const accessCode = String(req.body.accessCode || "").trim();
 
     if (!phone) {
       return res.status(400).json({
         error: "Invalid Ethiopian phone number"
+      });
+    }
+
+    if (accessCode !== "123456") {
+      return res.status(401).json({
+        error: "Invalid access code"
       });
     }
 

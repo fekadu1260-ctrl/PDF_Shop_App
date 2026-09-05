@@ -15,6 +15,7 @@ class AuthService {
 
   Future<Map<String, dynamic>> signInCustomer({
     required String phoneNumber,
+    required String accessCode,
   }) async {
     final response = await http
         .post(
@@ -24,6 +25,7 @@ class AuthService {
           },
           body: jsonEncode({
             'phone': phoneNumber,
+            'accessCode': accessCode,
           }),
         )
         .timeout(const Duration(seconds: 15));

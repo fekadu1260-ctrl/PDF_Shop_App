@@ -12,6 +12,7 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final phoneController = TextEditingController();
+  final accessCodeController = TextEditingController();
   final AuthService authService = AuthService();
 
   bool loading = false;
@@ -42,6 +43,7 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> login() async {
     final phone = _normalizePhone(phoneController.text);
+    final accessCode = accessCodeController.text.trim();
 
     if (!RegExp(r'^\+2519\d{8}$').hasMatch(phone)) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -54,6 +56,15 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
 
+    if (!RegExp(r'^\d{6}$').hasMatch(accessCode)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Enter the 6-digit access code.'),
+        ),
+      );
+      return;
+    }
+
     setState(() {
       loading = true;
     });
@@ -61,6 +72,7 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       await authService.signInCustomer(
         phoneNumber: phone,
+        accessCode: accessCode,
       );
 
       if (!mounted) return;
@@ -99,6 +111,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   void dispose() {
     phoneController.dispose();
+    accessCodeController.dispose();
     super.dispose();
   }
 
@@ -132,7 +145,7 @@ class _LoginScreenState extends State<LoginScreen> {
             const SizedBox(height: 8),
 
             const Text(
-              'Enter your phone number to continue.',
+              'Enter your phone number and access code to continue.',
               textAlign: TextAlign.center,
             ),
 
@@ -147,6 +160,23 @@ class _LoginScreenState extends State<LoginScreen> {
                 hintText: '0912345678',
                 prefixIcon: Icon(Icons.phone),
                 border: OutlineInputBorder(),
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            TextField(
+              controller: accessCodeController,
+              keyboardType: TextInputType.number,
+              obscureText: true,
+              maxLength: 6,
+              enabled: !loading,
+              decoration: const InputDecoration(
+                labelText: 'Access Code',
+                hintText: '6-digit access code',
+                prefixIcon: Icon(Icons.lock),
+                border: OutlineInputBorder(),
+                counterText: '',
               ),
             ),
 
@@ -171,25 +201,7 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
             ),
 
-            const SizedBox(height: 12),
 
-            SizedBox(
-              width: double.infinity,
-              child: OutlinedButton.icon(
-                onPressed: loading
-                    ? null
-                    : () {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const MainNavigationScreen(),
-                          ),
-                        );
-                      },
-                icon: const Icon(Icons.store),
-                label: const Text('Continue to Shop'),
-              ),
-            ),
           ],
         ),
       ),
