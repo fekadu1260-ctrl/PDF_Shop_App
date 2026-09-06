@@ -6,7 +6,7 @@ const fs = require("fs");
 const { initializeApp, cert } = require("firebase-admin/app");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
 const { getAuth } = require("firebase-admin/auth");
-const { getStorage } = require("firebase-admin/storage");
+const { v2: cloudinary } = require("cloudinary");
 const jwt = require("jsonwebtoken");
 function createCustomerToken(customer) {
   return jwt.sign(
@@ -36,12 +36,16 @@ const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT_JSON
   : require("./serviceAccountKey.json");
 
 initializeApp({
-  credential: cert(serviceAccount),
-  storageBucket: "eatandfee.firebasestorage.app"
+  credential: cert(serviceAccount)
+});
+
+cloudinary.config({
+  cloud_name: process.env.Cloudinary_name,
+  api_key: process.env.API_KEY,
+  api_secret: process.env.API_SECRET,
 });
 
 const db = getFirestore();
-const bucket = getStorage().bucket();
 const app = express();
 
 app.use(express.json());
@@ -391,38 +395,41 @@ app.post("/upload-pdf", requireAdmin, (req, res) => {
         .replace(/[^a-zA-Z0-9._-]/g, "_");
 
       const fileName = `${Date.now()}-${safeName}`;
-      const file = bucket.file(`pdfs/${fileName}`);
 
-      await file.save(req.file.buffer, {
-        metadata: {
-          contentType: "application/pdf",
-          metadata: {
-            originalName: req.file.originalname
+      const uploadResult = await new Promise((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            resource_type: "raw",
+            folder: "pdf-shop/pdfs",
+            public_id: fileName,
+            use_filename: false,
+            overwrite: false
+          },
+          (error, result) => {
+            if (error) reject(error);
+            else resolve(result);
           }
-        },
-        resumable: false
+        );
+
+        uploadStream.end(req.file.buffer);
       });
 
-      const [signedUrl] = await file.getSignedUrl({
-        action: "read",
-        expires: "12-31-2035"
-      });
-
-      console.log("PDF uploaded to Firebase Storage:", fileName);
+      console.log("PDF uploaded to Cloudinary:", fileName);
 
       return res.status(201).json({
-        message: "PDF uploaded successfully to Firebase Storage",
+        message: "PDF uploaded successfully to Cloudinary",
         fileName,
         originalName: req.file.originalname,
         size: req.file.size,
-        fileUrl: signedUrl
+        fileUrl: uploadResult.secure_url,
+        cloudinaryPublicId: uploadResult.public_id
       });
 
     } catch (uploadError) {
-      console.error("Firebase Storage upload failed:", uploadError);
+      console.error("Cloudinary upload failed:", uploadError);
 
       return res.status(500).json({
-        error: "Firebase Storage upload failed",
+        error: "Cloudinary upload failed",
         details: uploadError.message
       });
     }
