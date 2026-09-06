@@ -39,6 +39,7 @@ initializeApp({
   credential: cert(serviceAccount)
 });
 
+console.log("CLOUDINARY CLOUD NAME:", JSON.stringify(process.env.Cloudinary_name));
 cloudinary.config({
   cloud_name: process.env.Cloudinary_name,
   api_key: process.env.API_KEY,
