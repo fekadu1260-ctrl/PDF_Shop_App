@@ -40,7 +40,11 @@ initializeApp({
 });
 
 cloudinary.config();
-console.log("CLOUDINARY CLOUD NAME:", JSON.stringify(cloudinary.config().cloud_name));
+console.log("CLOUDINARY CONFIG:", {
+  cloud_name: cloudinary.config().cloud_name,
+  api_key: cloudinary.config().api_key,
+  api_secret_present: !!cloudinary.config().api_secret
+});
 
 const db = getFirestore();
 const app = express();
