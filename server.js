@@ -400,7 +400,7 @@ app.post("/upload-pdf", requireAdmin, (req, res) => {
       const uploadResult = await new Promise((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
           {
-            resource_type: "raw",
+            resource_type: "image",
             folder: "pdf-shop/pdfs",
             public_id: fileName,
             use_filename: false,
