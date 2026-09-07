@@ -427,11 +427,17 @@ app.post("/upload-pdf", requireAdmin, (req, res) => {
       });
 
     } catch (uploadError) {
-      console.error("Cloudinary upload failed:", uploadError);
+      console.error("Cloudinary upload failed:", {
+        message: uploadError.message,
+        http_code: uploadError.http_code,
+        name: uploadError.name,
+        error: uploadError.error
+      });
 
       return res.status(500).json({
         error: "Cloudinary upload failed",
-        details: uploadError.message
+        details: uploadError.message,
+        http_code: uploadError.http_code
       });
     }
   });
